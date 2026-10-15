@@ -1,0 +1,10 @@
+node_modules
+.next
+.superpowers
+*.db
+*.db-journal
+.env
+test-results
+playwright-report
+docs/research/raw
+
