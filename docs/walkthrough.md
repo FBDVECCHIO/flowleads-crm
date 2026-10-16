@@ -12,6 +12,8 @@
 Abaixo estão registradas as evidências visuais capturadas diretamente da aplicação em execução:
 
 ````carousel
+![Painel de Metas em Produção na Vercel: Autenticado e Operacional](C:/Users/fbdv1/.gemini/antigravity/brain/e16d6922-94ac-492b-b130-3ccb983783d1/screenshots/15-vercel-authenticated-dashboard.png)
+<!-- slide -->
 ![Tela Inicial Padrão: Gestão de Metas com Termômetro e Boas-Vindas](C:/Users/fbdv1/.gemini/antigravity/brain/e16d6922-94ac-492b-b130-3ccb983783d1/screenshots/10-goals-landing.png)
 <!-- slide -->
 ![Sidebar Dinâmica em Modo Compacto: Apenas Ícones com Tooltips Flutuantes](C:/Users/fbdv1/.gemini/antigravity/brain/e16d6922-94ac-492b-b130-3ccb983783d1/screenshots/12-sidebar-collapsed.png)
