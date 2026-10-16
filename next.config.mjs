@@ -1,4 +1,4 @@
-﻿/** @type {import('next').NextConfig} */
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   eslint: {
@@ -6,7 +6,10 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
-  }
+  },
+  outputFileTracingIncludes: {
+    "/**/*": ["./prisma/dev.db"],
+  },
 };
 
 export default nextConfig;
