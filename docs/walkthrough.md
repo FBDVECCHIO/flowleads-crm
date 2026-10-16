@@ -88,6 +88,12 @@ git push -u origin main
 
 ### B. Publicação na Vercel (Produção em Nuvem)
 
+> [!NOTE]
+> **Status do Deploy em Nuvem:** ATIVO E EM PRODUÇÃO  
+> - **URL Oficial de Produção:** [https://flowleads-crm-blush.vercel.app](https://flowleads-crm-blush.vercel.app)  
+> - **URL de Preview:** [https://flowleads-qxlpqazop-fbdvecchios-projects.vercel.app](https://flowleads-qxlpqazop-fbdvecchios-projects.vercel.app)  
+> - **Painel do Projeto:** [https://vercel.com/fbdvecchios-projects/flowleads-crm](https://vercel.com/fbdvecchios-projects/flowleads-crm)  
+
 > [!IMPORTANT]
 > **Alerta de Infraestrutura Serverless da Vercel:**  
 > Como a Vercel opera em servidores sem estado (*stateless*), bancos SQLite locais em arquivo (`dev.db`) são reiniciados a cada requisição. Para publicação online definitiva:
