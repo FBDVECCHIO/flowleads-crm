@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.ts";
+import { AutomationEngine } from "./automationEngine.ts";
 
 export interface CreateCardInput {
   pipeId: string;
@@ -106,6 +107,9 @@ export class CardService {
       },
     });
 
+    // Disparar automações de criação de card em segundo plano
+    await AutomationEngine.triggerCardCreated(card.id);
+
     return this.getCardById(card.id);
   }
 
@@ -168,6 +172,7 @@ export class CardService {
     }
 
     // Mover de fase
+    const oldPhaseId = card.currentPhaseId;
     const oldPhaseName = card.currentPhase.name;
     const updatedCard = await prisma.card.update({
       where: { id: cardId },
@@ -187,6 +192,9 @@ export class CardService {
         details: `Card movido de "${oldPhaseName}" para "${targetPhase.name}".`,
       },
     });
+
+    // Disparar automações de movimentação
+    await AutomationEngine.triggerCardMoved(cardId, oldPhaseId, targetPhaseId);
 
     return this.getCardById(cardId);
   }
