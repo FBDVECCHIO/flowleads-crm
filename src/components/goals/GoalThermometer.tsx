@@ -14,14 +14,16 @@ interface GoalThermometerProps {
 }
 
 export function GoalThermometer({
-  currentAmount,
-  targetAmount,
-  percentage,
-  currentDeals,
-  targetDeals,
-  dealsPercentage,
-  userName,
+  currentAmount = 0,
+  targetAmount = 100000,
+  percentage = 0,
+  currentDeals = 0,
+  targetDeals = 10,
+  dealsPercentage = 0,
+  userName = "Consultor",
 }: GoalThermometerProps) {
+  const safePercentage = isNaN(percentage) ? 0 : percentage;
+
   // Determine gradient color and status message based on attainment percentage
   let barGradient = "from-red-500 to-rose-600";
   let statusBadge = {
@@ -29,25 +31,25 @@ export function GoalThermometer({
     badgeClass: "bg-red-50 text-red-700 border-red-200",
   };
 
-  if (percentage >= 120) {
+  if (safePercentage >= 120) {
     barGradient = "from-purple-600 via-indigo-600 to-emerald-500";
     statusBadge = {
       label: "Supermeta Batida! 👑",
       badgeClass: "bg-purple-50 text-purple-700 border-purple-200",
     };
-  } else if (percentage >= 100) {
+  } else if (safePercentage >= 100) {
     barGradient = "from-emerald-500 to-teal-600";
     statusBadge = {
       label: "Meta Batida! 🚀",
       badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
     };
-  } else if (percentage >= 80) {
+  } else if (safePercentage >= 80) {
     barGradient = "from-blue-600 to-cyan-600";
     statusBadge = {
       label: "Na Reta Final",
       badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
     };
-  } else if (percentage >= 50) {
+  } else if (safePercentage >= 50) {
     barGradient = "from-amber-500 to-yellow-500";
     statusBadge = {
       label: "Em Evolução",
@@ -55,7 +57,7 @@ export function GoalThermometer({
     };
   }
 
-  const visualProgressWidth = Math.min(Math.max(percentage, 0), 100);
+  const visualProgressWidth = Math.min(Math.max(safePercentage, 0), 100);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">

@@ -1,10 +1,11 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { PipeService } from "@/services/pipeService";
-import { getDefaultUser, verifySession } from "@/lib/auth";
+import { verifySession } from "@/lib/auth";
 import { getUserGoal, getTeamGoalRanking } from "@/services/goalService";
 import { GoalDashboard } from "@/components/goals/GoalDashboard";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,18 @@ export const dynamic = "force-dynamic";
  * Saudação: Bem-vindo - [Nome]
  */
 export default async function HomePage() {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get("flowleads_session")?.value;
+
+  if (!sessionCookie) {
+    redirect("/auth/login");
+  }
+
+  const session = verifySession(decodeURIComponent(sessionCookie));
+  if (!session) {
+    redirect("/auth/login");
+  }
+
   let defaultPipe: any = null;
   let currentUser: any = null;
   let userGoal: any = null;
@@ -24,47 +37,44 @@ export default async function HomePage() {
     const pipes = await PipeService.listPipes();
     defaultPipe = pipes && pipes.length > 0 ? pipes[0] : null;
 
-    // Resolve authenticated user from session cookie or fallback to default
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get("flowleads_session")?.value;
-
-    if (sessionCookie) {
-      const session = verifySession(decodeURIComponent(sessionCookie));
-      if (session) {
-        currentUser = await prisma.user.findUnique({
-          where: { id: session.userId },
-          include: { organization: true },
-        });
-      }
-    }
+    currentUser = await prisma.user.findUnique({
+      where: { id: session.userId },
+      include: { organization: true },
+    });
 
     if (!currentUser) {
-      currentUser = await getDefaultUser();
+      redirect("/auth/login");
     }
 
-    if (currentUser) {
-      isSupervisor = currentUser.role === "ADMIN" || currentUser.role === "SUPERVISOR";
-      userGoal = await getUserGoal(currentUser.id);
+    isSupervisor = currentUser.role === "ADMIN" || currentUser.role === "SUPERVISOR";
+    userGoal = await getUserGoal(currentUser.id);
 
-      if (isSupervisor && currentUser.organizationId) {
-        teamRanking = await getTeamGoalRanking(currentUser.organizationId);
-      }
+    if (isSupervisor && currentUser.organizationId) {
+      teamRanking = await getTeamGoalRanking(currentUser.organizationId);
     }
-  } catch (error) {
-    console.warn("Aviso: Banco de dados inicializando ou sem tabelas durante pre-renderização:", error);
+  } catch (error: any) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+    console.warn("Aviso: Falha ao carregar dados do usuário na tela de metas:", error);
     currentUser = {
-      id: "cmvbdkt9q0001lggc9b7v561a",
-      name: "Carlos Silva",
-      email: "carlos@acmecorp.com",
-      role: "ADMIN",
-      organizationId: "cmvbdkt9p0000lggc4091m8pa",
+      id: session.userId,
+      name: session.name || "Carlos Silva",
+      email: session.email,
+      role: session.role || "ADMIN",
+      organizationId: session.organizationId,
     };
     isSupervisor = true;
     userGoal = {
-      targetValue: 100000,
-      currentValue: 45000,
+      userId: session.userId,
+      userName: session.name || "Carlos Silva",
+      targetAmount: 100000,
+      currentAmount: 45000,
       percentage: 45,
-      period: "MENSAL",
+      targetDeals: 10,
+      currentDeals: 4,
+      dealsPercentage: 40,
+      rankingPosition: 1,
     };
   }
 

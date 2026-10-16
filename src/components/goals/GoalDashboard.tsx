@@ -33,7 +33,15 @@ export function GoalDashboard({
   defaultPipeId,
   orgName = "Grupo Mário Neto",
 }: GoalDashboardProps) {
-  const missingAmount = Math.max(0, userGoal.targetAmount - userGoal.currentAmount);
+  const targetAmount = userGoal?.targetAmount ?? 100000;
+  const currentAmount = userGoal?.currentAmount ?? 0;
+  const percentage = userGoal?.percentage ?? (targetAmount > 0 ? Math.round((currentAmount / targetAmount) * 100) : 0);
+  const targetDeals = userGoal?.targetDeals ?? 10;
+  const currentDeals = userGoal?.currentDeals ?? 0;
+  const dealsPercentage = userGoal?.dealsPercentage ?? (targetDeals > 0 ? Math.round((currentDeals / targetDeals) * 100) : 0);
+  const userName = userGoal?.userName || "Consultor Comercial";
+  const rankingPosition = userGoal?.rankingPosition ?? 1;
+  const missingAmount = Math.max(0, targetAmount - currentAmount);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
@@ -48,7 +56,7 @@ export function GoalDashboard({
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Bem-vindo - {userGoal.userName}
+            Bem-vindo - {userName}
           </h1>
 
           <p className="text-blue-100 text-sm leading-relaxed max-w-2xl">
@@ -157,10 +165,10 @@ export function GoalDashboard({
           </div>
           <div className="mt-3">
             <span className="text-2xl font-extrabold text-purple-600">
-              {userGoal.rankingPosition}º Lugar
+              {rankingPosition}º Lugar
             </span>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              {userGoal.currentDeals} de {userGoal.targetDeals} negócios fechados
+              {currentDeals} de {targetDeals} negócios fechados
             </p>
           </div>
         </div>
@@ -168,20 +176,20 @@ export function GoalDashboard({
 
       {/* 3. Termômetro Visual de Metas */}
       <GoalThermometer
-        currentAmount={userGoal.currentAmount}
-        targetAmount={userGoal.targetAmount}
-        percentage={userGoal.percentage}
-        currentDeals={userGoal.currentDeals}
-        targetDeals={userGoal.targetDeals}
-        dealsPercentage={userGoal.dealsPercentage}
-        userName={userGoal.userName}
+        currentAmount={currentAmount}
+        targetAmount={targetAmount}
+        percentage={percentage}
+        currentDeals={currentDeals}
+        targetDeals={targetDeals}
+        dealsPercentage={dealsPercentage}
+        userName={userName}
       />
 
       {/* 4. Tabela de Ranking da Equipe (Disponível para Supervisor/Admin ou Equipe) */}
       {teamRanking && teamRanking.length > 0 && (
         <GoalRankingTable
           ranking={teamRanking}
-          currentUserId={userGoal.userId}
+          currentUserId={userGoal?.userId}
         />
       )}
     </div>

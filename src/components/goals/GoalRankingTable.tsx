@@ -5,11 +5,12 @@ import { formatCurrency } from "@/lib/utils";
 import { Trophy, Medal, MessageSquare, ExternalLink, ArrowUpRight } from "lucide-react";
 
 interface GoalRankingTableProps {
-  ranking: GoalProgress[];
+  ranking?: GoalProgress[];
   currentUserId?: string;
 }
 
-export function GoalRankingTable({ ranking, currentUserId }: GoalRankingTableProps) {
+export function GoalRankingTable({ ranking = [], currentUserId }: GoalRankingTableProps) {
+  const list = Array.isArray(ranking) ? ranking : [];
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
       <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -47,7 +48,7 @@ export function GoalRankingTable({ ranking, currentUserId }: GoalRankingTablePro
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {ranking.map((rep) => {
+            {list.map((rep) => {
               const isCurrentUser = rep.userId === currentUserId;
               const cleanPhone = rep.whatsappNumber ? rep.whatsappNumber.replace(/\D/g, "") : "";
 
