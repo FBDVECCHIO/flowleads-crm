@@ -1,0 +1,280 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users          User[]
+  pipes          Pipe[]
+  databaseTables DatabaseTable[]
+}
+
+model User {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  email          String       @unique
+  passwordHash   String
+  role           String       @default("MEMBER") // ADMIN, MEMBER, VIEWER
+  avatarUrl      String?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  assignees CardAssignee[]
+  comments  CardComment[]
+  createdCards Card[] @relation("CardCreator")
+}
+
+model Pipe {
+  id                  String   @id @default(cuid())
+  organizationId      String
+  name                String
+  description         String?
+  icon                String   @default("Briefcase")
+  color               String   @default("#0b66c3")
+  isPublicFormEnabled Boolean  @default(true)
+  publicFormSlug      String   @unique
+  slaEnabled          Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  phases       Phase[]
+  fields       Field[]
+  labels       Label[]
+  cards        Card[]
+  automations  Automation[]
+  webhooks     Webhook[]
+  emailOutbox  EmailOutbox[]
+}
+
+model Phase {
+  id          String   @id @default(cuid())
+  pipeId      String
+  name        String
+  description String?
+  order       Int
+  color       String   @default("#3b82f6")
+  isFinalWon  Boolean  @default(false)
+  isFinalLost Boolean  @default(false)
+  slaHours    Int?
+  wipLimit    Int?
+  createdAt   DateTime @default(now())
+
+  pipe   Pipe    @relation(fields: [pipeId], references: [id], onDelete: Cascade)
+  fields Field[]
+  cards  Card[]
+}
+
+model Field {
+  id          String   @id @default(cuid())
+  pipeId      String
+  phaseId     String? // null = Start Form field (Global do Pipe)
+  label       String
+  identifier  String // unique slug no pipe
+  type        String // TEXT, TEXTAREA, NUMBER, CURRENCY, EMAIL, PHONE, DATE, SELECT, MULTI_SELECT, CHECKBOX, URL
+  isRequired  Boolean  @default(false)
+  options     String? // JSON string: ["Opcao 1", "Opcao 2"]
+  placeholder String?
+  helpText    String?
+  order       Int      @default(0)
+
+  pipe   Pipe             @relation(fields: [pipeId], references: [id], onDelete: Cascade)
+  phase  Phase?           @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  values CardFieldValue[]
+
+  @@unique([pipeId, identifier])
+}
+
+model Label {
+  id        String      @id @default(cuid())
+  pipeId    String
+  name      String
+  color     String      @default("#ef4444")
+  pipe      Pipe        @relation(fields: [pipeId], references: [id], onDelete: Cascade)
+  cardLinks CardLabel[]
+}
+
+model Card {
+  id             String   @id @default(cuid())
+  pipeId         String
+  currentPhaseId String
+  title          String
+  dealValue      Float?   @default(0)
+  priority       String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  dueDate        DateTime?
+  slaStatus      String   @default("ON_TRACK") // ON_TRACK, WARNING, OVERDUE
+  phaseEnteredAt DateTime @default(now())
+  createdById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  pipe         Pipe              @relation(fields: [pipeId], references: [id], onDelete: Cascade)
+  currentPhase Phase             @relation(fields: [currentPhaseId], references: [id])
+  creator      User?             @relation("CardCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  values       CardFieldValue[]
+  assignees    CardAssignee[]
+  labels       CardLabel[]
+  checklists   CardChecklist[]
+  comments     CardComment[]
+  activities   CardActivity[]
+  emailOutbox  EmailOutbox[]
+}
+
+model CardFieldValue {
+  id      String @id @default(cuid())
+  cardId  String
+  fieldId String
+  value   String // text, number, json
+
+  card  Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  field Field @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, fieldId])
+}
+
+model CardAssignee {
+  id     String @id @default(cuid())
+  cardId String
+  userId String
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, userId])
+}
+
+model CardLabel {
+  id      String @id @default(cuid())
+  cardId  String
+  labelId String
+
+  card  Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  label Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, labelId])
+}
+
+model CardChecklist {
+  id     String @id @default(cuid())
+  cardId String
+  title  String @default("Tarefas")
+  items  String @default("[]") // JSON string: [{id, text, completed: boolean}]
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+}
+
+model CardComment {
+  id         String   @id @default(cuid())
+  cardId     String
+  userId     String?
+  authorName String
+  content    String
+  createdAt  DateTime @default(now())
+
+  card Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model CardActivity {
+  id         String   @id @default(cuid())
+  cardId     String
+  userId     String?
+  actionType String // CREATED, MOVED, FIELD_UPDATED, COMMENTED, ASSIGNED, SLA_ALERT
+  details    String
+  createdAt  DateTime @default(now())
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+}
+
+model Automation {
+  id               String    @id @default(cuid())
+  pipeId           String
+  name             String
+  isActive         Boolean   @default(true)
+  triggerType      String // CARD_CREATED, CARD_MOVED, FIELD_UPDATED
+  triggerConfig    String    @default("{}") // JSON: { phaseId?: string, fieldId?: string, value?: string }
+  conditions       String    @default("[]") // JSON: [{ fieldId, operator: "EQUALS"|"CONTAINS"|"GREATER_THAN", value }]
+  actionType       String // MOVE_CARD, UPDATE_FIELD, ASSIGN_USER, SEND_EMAIL, TRIGGER_WEBHOOK
+  actionConfig     String    @default("{}") // JSON: { targetPhaseId, fieldId, value, userId, emailSubject, emailBody, webhookUrl }
+  executionsCount  Int       @default(0)
+  lastExecutedAt   DateTime?
+  createdAt        DateTime  @default(now())
+
+  pipe Pipe @relation(fields: [pipeId], references: [id], onDelete: Cascade)
+}
+
+model Webhook {
+  id        String   @id @default(cuid())
+  pipeId    String
+  name      String
+  url       String
+  events    String   @default("[\"card.created\",\"card.moved\",\"card.updated\"]") // JSON array
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  pipe Pipe @relation(fields: [pipeId], references: [id], onDelete: Cascade)
+}
+
+model EmailOutbox {
+  id             String    @id @default(cuid())
+  pipeId         String
+  cardId         String?
+  recipientEmail String
+  subject        String
+  body           String
+  status         String    @default("SENT") // SENT, PENDING, FAILED
+  sentAt         DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+
+  pipe Pipe  @relation(fields: [pipeId], references: [id], onDelete: Cascade)
+  card Card? @relation(fields: [cardId], references: [id], onDelete: SetNull)
+}
+
+model DatabaseTable {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  createdAt      DateTime @default(now())
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  fields       DatabaseField[]
+  records      DatabaseRecord[]
+}
+
+model DatabaseField {
+  id         String  @id @default(cuid())
+  tableId    String
+  label      String
+  identifier String
+  type       String  @default("TEXT") // TEXT, NUMBER, CURRENCY, EMAIL, PHONE, SELECT
+  isRequired Boolean @default(false)
+  options    String?
+  order      Int     @default(0)
+
+  table DatabaseTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([tableId, identifier])
+}
+
+model DatabaseRecord {
+  id        String   @id @default(cuid())
+  tableId   String
+  title     String
+  values    String   @default("{}") // JSON key-value
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  table DatabaseTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+}
