@@ -7,6 +7,7 @@ async function main() {
   console.log("Iniciando seed do FlowLeads CRM...");
 
   // 1. Limpar banco existente
+  await prisma.cardAttachment.deleteMany();
   await prisma.emailOutbox.deleteMany();
   await prisma.webhook.deleteMany();
   await prisma.automation.deleteMany();
@@ -30,14 +31,14 @@ async function main() {
   // 2. Criar Organizacao
   const org = await prisma.organization.create({
     data: {
-      name: "Acme Corp Brasil",
-      slug: "acme",
+      name: "Grupo Mário Neto",
+      slug: "grupo-mario-neto",
     },
   });
 
-  // 3. Criar Usuarios
-  const adminPassword = await bcrypt.hash("admin123", 10);
-  const userPassword = await bcrypt.hash("user123", 10);
+  // 3. Criar Usuarios com bcrypt 12 salt rounds
+  const adminPassword = await bcrypt.hash("admin123", 12);
+  const userPassword = await bcrypt.hash("user123", 12);
 
   const admin = await prisma.user.create({
     data: {
@@ -46,6 +47,12 @@ async function main() {
       email: "admin@flowleads.com",
       passwordHash: adminPassword,
       role: "ADMIN",
+      whatsappNumber: "+5511988887777",
+      monthlyTargetAmount: 150000,
+      monthlyTargetDeals: 15,
+      allowedDays: "1,2,3,4,5",
+      workStartTime: "08:00",
+      workEndTime: "18:00",
     },
   });
 
@@ -56,6 +63,12 @@ async function main() {
       email: "carlos@flowleads.com",
       passwordHash: userPassword,
       role: "MEMBER",
+      whatsappNumber: "+5511999999999",
+      monthlyTargetAmount: 200000,
+      monthlyTargetDeals: 10,
+      allowedDays: "1,2,3,4,5",
+      workStartTime: "08:00",
+      workEndTime: "18:00",
     },
   });
 
@@ -66,6 +79,12 @@ async function main() {
       email: "mariana@flowleads.com",
       passwordHash: userPassword,
       role: "MEMBER",
+      whatsappNumber: "+5511977776666",
+      monthlyTargetAmount: 150000,
+      monthlyTargetDeals: 8,
+      allowedDays: "1,2,3,4,5",
+      workStartTime: "08:00",
+      workEndTime: "18:00",
     },
   });
 
@@ -74,7 +93,7 @@ async function main() {
     data: {
       organizationId: org.id,
       name: "Funil de Vendas & Gestão de Leads",
-      description: "Pipeline comercial inspirado no Pipefy com qualificação BANT, controle de SLA e automações.",
+      description: "Pipeline comercial FlowLeads com qualificação BANT, controle de SLA e automações.",
       icon: "TrendingUp",
       color: "#0b66c3",
       isPublicFormEnabled: true,
@@ -370,7 +389,7 @@ async function main() {
       { cardId: card1.id, fieldId: fieldCompany.id, value: "TechCorp Brasil" },
       { cardId: card1.id, fieldId: fieldOrigin.id, value: "Formulário Web" },
       { cardId: card1.id, fieldId: fieldDealValue.id, value: "48000" },
-      { cardId: card1.id, fieldId: fieldNeed.id, value: "Precisam substituir planilhas por um CRM estruturado estilo Pipefy para 25 corretores." },
+      { cardId: card1.id, fieldId: fieldNeed.id, value: "Precisam substituir planilhas por um CRM estruturado estilo FlowLeads para 25 corretores." },
     ],
   });
 

@@ -1,16 +1,28 @@
-﻿"use client";
+"use client";
 
-import { Clock, CheckSquare, MessageSquare, AlertCircle, DollarSign, User } from "lucide-react";
+import { Clock, CheckSquare, MessageSquare, AlertCircle, DollarSign, User, MoreVertical, MoreHorizontal } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { CardContextMenu } from "./CardContextMenu";
 
 export interface CardItemProps {
   card: any;
   phases: any[];
+  labels?: any[];
   onOpenCard: (card: any) => void;
   onMoveCard: (cardId: string, targetPhaseId: string) => void;
+  onColorChange?: (cardId: string, color: string) => void;
+  onDeleteCard?: (cardId: string) => void;
 }
 
-export function CardItem({ card, phases, onOpenCard, onMoveCard }: CardItemProps) {
+export function CardItem({
+  card,
+  phases,
+  labels,
+  onOpenCard,
+  onMoveCard,
+  onColorChange,
+  onDeleteCard,
+}: CardItemProps) {
   const currentPhaseIndex = phases.findIndex((p) => p.id === card.currentPhaseId);
   const nextPhase = phases[currentPhaseIndex + 1];
 
@@ -30,23 +42,41 @@ export function CardItem({ card, phases, onOpenCard, onMoveCard }: CardItemProps
     e.dataTransfer.setData("text/plain", JSON.stringify({ cardId: card.id, sourcePhaseId: card.currentPhaseId }));
   };
 
+  const hasCustomColor = card.color && card.color !== "#ffffff";
+
   return (
     <div
       draggable
       onDragStart={handleDragStart}
       onClick={() => onOpenCard(card)}
+      style={hasCustomColor ? { borderLeftColor: card.color, borderLeftWidth: "4px" } : undefined}
       className="bg-white rounded-lg p-3.5 border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group select-none space-y-2.5 relative"
     >
-      {(slaWarning || slaOverdue) && (
-        <div
-          className={`text-[10px] font-semibold px-2 py-0.5 rounded flex items-center gap-1 ${
-            slaOverdue ? "bg-red-50 text-red-700 border border-red-200" : "bg-amber-50 text-amber-700 border border-amber-200"
-          }`}
-        >
-          <AlertCircle className="w-3 h-3" />
-          <span>{slaOverdue ? "SLA Vencido" : "SLA em Alerta (>70%)"}</span>
+      <div className="flex items-center justify-between gap-1">
+        {(slaWarning || slaOverdue) ? (
+          <div
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded flex items-center gap-1 ${
+              slaOverdue ? "bg-red-50 text-red-700 border border-red-200" : "bg-amber-50 text-amber-700 border border-amber-200"
+            }`}
+          >
+            <AlertCircle className="w-3 h-3" />
+            <span>{slaOverdue ? "SLA Vencido" : "SLA em Alerta (>70%)"}</span>
+          </div>
+        ) : <div />}
+
+        {/* 3-dots Context Menu (pontinhos) */}
+        <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <CardContextMenu
+            card={card}
+            phases={phases}
+            labels={labels}
+            onColorChange={(color) => onColorChange?.(card.id, color)}
+            onMovePhase={(targetPhaseId) => onMoveCard(card.id, targetPhaseId)}
+            onOpenAttachments={() => onOpenCard(card)}
+            onDeleteCard={onDeleteCard ? () => onDeleteCard(card.id) : undefined}
+          />
         </div>
-      )}
+      </div>
 
       {card.labels && card.labels.length > 0 && (
         <div className="flex flex-wrap gap-1">

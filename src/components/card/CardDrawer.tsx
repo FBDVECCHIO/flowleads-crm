@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { 
@@ -6,7 +6,10 @@ import {
   CheckSquare, 
   History, 
   AlertCircle,
-  Send
+  Send,
+  Paperclip,
+  FileText,
+  Download
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -31,7 +34,7 @@ export function CardDrawer({
   onAddComment,
   onToggleChecklist,
 }: CardDrawerProps) {
-  const [activeTab, setActiveTab] = useState<"fields" | "checklist" | "activity">("fields");
+  const [activeTab, setActiveTab] = useState<"fields" | "checklist" | "activity" | "attachments">("fields");
   const [formValues, setFormValues] = useState<Record<string, string>>(() => {
     const map: Record<string, string> = {};
     if (card?.values) {
@@ -171,6 +174,15 @@ export function CardDrawer({
             <History className="w-3.5 h-3.5" />
             Histórico & Atividades
           </button>
+          <button
+            onClick={() => setActiveTab("attachments")}
+            className={`py-2.5 px-4 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
+              activeTab === "attachments" ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Paperclip className="w-3.5 h-3.5" />
+            Anexos & Receitas ({card.attachments?.length || 0})
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -301,6 +313,50 @@ export function CardDrawer({
                     </div>
                   ))}
               </div>
+            </div>
+          )}
+
+          {activeTab === "attachments" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <span className="text-xs font-bold text-slate-700">Documentos e Receitas Médicas</span>
+              </div>
+
+              {(!card.attachments || card.attachments.length === 0) ? (
+                <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-lg text-slate-400 text-xs">
+                  <Paperclip className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                  <p>Nenhum anexo ou receita médica vinculada a este card.</p>
+                  <p className="text-[10px] text-slate-400 mt-1">Formatos aceitos: PDF, PNG, JPEG, DOCX (até 10MB)</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {card.attachments.map((att: any) => (
+                    <div
+                      key={att.id}
+                      className="p-3 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-between text-xs transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <FileText className="w-5 h-5 text-blue-600 shrink-0" />
+                        <div>
+                          <p className="font-semibold text-slate-800">{att.fileName}</p>
+                          <p className="text-[10px] text-slate-400">
+                            {(att.sizeBytes / 1024).toFixed(1)} KB &bull; {att.mimeType} &bull; {formatDate(att.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={att.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-1 text-[11px] font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded border border-blue-200 flex items-center gap-1"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>Visualizar anexo</span>
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

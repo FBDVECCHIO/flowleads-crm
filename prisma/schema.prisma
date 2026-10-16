@@ -28,6 +28,15 @@ model User {
   role           String       @default("MEMBER") // ADMIN, MEMBER, VIEWER
   avatarUrl      String?
   createdAt      DateTime     @default(now())
+
+  // Milestone 2: Gestão de Metas & Controle de Acesso
+  whatsappNumber      String?
+  monthlyTargetAmount Float?   @default(100000)
+  monthlyTargetDeals  Int?     @default(10)
+  allowedDays         String?  @default("1,2,3,4,5")
+  workStartTime       String?  @default("08:00")
+  workEndTime         String?  @default("18:00")
+
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   assignees CardAssignee[]
@@ -112,6 +121,7 @@ model Card {
   title          String
   dealValue      Float?   @default(0)
   priority       String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  color          String?  @default("#ffffff")
   dueDate        DateTime?
   slaStatus      String   @default("ON_TRACK") // ON_TRACK, WARNING, OVERDUE
   phaseEnteredAt DateTime @default(now())
@@ -128,7 +138,19 @@ model Card {
   checklists   CardChecklist[]
   comments     CardComment[]
   activities   CardActivity[]
+  attachments  CardAttachment[]
   emailOutbox  EmailOutbox[]
+}
+
+model CardAttachment {
+  id          String   @id @default(cuid())
+  cardId      String
+  card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  fileName    String
+  fileUrl     String
+  mimeType    String
+  sizeBytes   Int
+  createdAt   DateTime @default(now())
 }
 
 model CardFieldValue {

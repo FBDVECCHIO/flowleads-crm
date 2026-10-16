@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
@@ -70,7 +70,7 @@ export default function DatabasePage() {
               <h1 className="text-lg font-bold text-slate-900 tracking-tight">Database Central de Clientes</h1>
             </div>
             <p className="text-xs text-slate-500">
-              Bancos de dados relacionais estruturados no estilo Pipefy Tables para suporte aos processos.
+              Bancos de dados relacionais estruturados para suporte aos processos comerciais.
             </p>
           </div>
 

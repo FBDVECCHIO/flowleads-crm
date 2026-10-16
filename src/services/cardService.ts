@@ -25,8 +25,9 @@ export class CardService {
         labels: { include: { label: true } },
         values: { include: { field: true } },
         checklists: true,
+        attachments: true,
         _count: {
-          select: { comments: true, checklists: true },
+          select: { comments: true, checklists: true, attachments: true },
         },
       },
       orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
@@ -49,6 +50,7 @@ export class CardService {
         labels: { include: { label: true } },
         values: { include: { field: true } },
         checklists: true,
+        attachments: true,
         comments: { orderBy: { createdAt: "desc" } },
         activities: { orderBy: { createdAt: "desc" } },
       },
@@ -161,7 +163,7 @@ export class CardService {
       updatedValues.filter((v) => v.value && v.value.trim().length > 0).map((v) => v.fieldId)
     );
 
-    // Validação de campos obrigatórios da fase de destino (Pipefy Rule)
+    // Validação de campos obrigatórios da fase de destino
     const missingRequiredFields = targetPhase.fields.filter(
       (f) => f.isRequired && !fulfilledFieldIds.has(f.id)
     );
@@ -248,4 +250,74 @@ export class CardService {
 
     return comment;
   }
+
+  static async deleteCard(cardId: string, userId?: string, userRole?: string): Promise<void> {
+    const card = await prisma.card.findUnique({ where: { id: cardId } });
+    if (!card) {
+      const error: any = new Error("Card não encontrado.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (userRole) {
+      const isPrivileged = userRole === "SUPERVISOR" || userRole === "ADMIN";
+      const isCreator = Boolean(userId && card.createdById === userId);
+      if (!isPrivileged && !isCreator) {
+        const error: any = new Error("Acesso não autorizado para excluir este card.");
+        error.statusCode = 403;
+        throw error;
+      }
+    }
+
+    await prisma.card.delete({ where: { id: cardId } });
+  }
+
+  static async updateCardColor(cardId: string, color: string) {
+    if (!/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(color)) {
+      throw new Error("Cor hexadecimal inválida.");
+    }
+    return prisma.card.update({
+      where: { id: cardId },
+      data: { color },
+    });
+  }
+
+  static async addCardAttachment(
+    cardId: string,
+    fileData: { fileName: string; fileUrl: string; mimeType: string; sizeBytes: number }
+  ) {
+    const card = await prisma.card.findUnique({ where: { id: cardId } });
+    if (!card) throw new Error("Card não encontrado.");
+
+    const attachment = await prisma.cardAttachment.create({
+      data: {
+        cardId,
+        fileName: fileData.fileName,
+        fileUrl: fileData.fileUrl,
+        mimeType: fileData.mimeType,
+        sizeBytes: fileData.sizeBytes,
+      },
+    });
+
+    await prisma.cardActivity.create({
+      data: {
+        cardId,
+        actionType: "ATTACHMENT_ADDED",
+        details: `Documento "${fileData.fileName}" anexado com sucesso.`,
+      },
+    });
+
+    return attachment;
+  }
 }
+
+// Standalone exported functions matching interface contracts and test suite imports
+export const listCards = CardService.listCards.bind(CardService);
+export const getCardById = CardService.getCardById.bind(CardService);
+export const createCard = CardService.createCard.bind(CardService);
+export const moveCard = CardService.moveCard.bind(CardService);
+export const updateCardFields = CardService.updateCardFields.bind(CardService);
+export const addComment = CardService.addComment.bind(CardService);
+export const deleteCard = CardService.deleteCard.bind(CardService);
+export const updateCardColor = CardService.updateCardColor.bind(CardService);
+export const addCardAttachment = CardService.addCardAttachment.bind(CardService);

@@ -1,9 +1,9 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FlowLeads CRM - Gestão de Leads e Processos",
-  description: "Plataforma completa de gestão de leads, funil comercial e automações no-code inspirada no Pipefy.",
+  title: "FlowLeads by Grupo Mário Neto - Gestão de Leads e Processos Comerciais",
+  description: "Plataforma comercial e gestão de leads FlowLeads by Grupo Mário Neto.",
 };
 
 export default function RootLayout({

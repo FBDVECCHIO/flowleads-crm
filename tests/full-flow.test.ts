@@ -1,4 +1,4 @@
-﻿import test from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
 import { POST as submitPublicForm } from "../src/app/api/public-form/[slug]/route.ts";
 import { CardService } from "../src/services/cardService.ts";
@@ -6,7 +6,7 @@ import { PipeService } from "../src/services/pipeService.ts";
 import { GET as getReports } from "../src/app/api/reports/route.ts";
 import { prisma } from "../src/lib/prisma.ts";
 
-test("Task 14: Full End-to-End Flow Test (Pipefy CRM Workflow)", async () => {
+test("Task 14: Full End-to-End Flow Test (FlowLeads CRM Workflow)", async () => {
   // 1. Submissão pública de Lead
   const leadPayload = {
     lead_name: "Guilherme Siqueira",

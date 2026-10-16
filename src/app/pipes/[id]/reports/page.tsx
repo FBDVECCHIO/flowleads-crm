@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, use } from "react";
 import { AppShell } from "@/components/layout/AppShell";
@@ -39,7 +39,7 @@ export default function ReportsPage({ params }: { params: Promise<{ id: string }
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">Relatórios & Funil de Conversão</h1>
           </div>
           <p className="text-xs text-slate-500">
-            Painel analítico e indicadores de desempenho do pipeline de vendas (Pipefy Reports & Analytics).
+            Painel analítico e indicadores de desempenho do funil de vendas FlowLeads.
           </p>
         </div>
 

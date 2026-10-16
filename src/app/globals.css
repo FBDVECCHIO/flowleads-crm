@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -13,7 +13,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* Custom scrollbars Pipefy style */
+/* Custom scrollbars FlowLeads style */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

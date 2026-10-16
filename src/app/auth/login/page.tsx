@@ -49,8 +49,8 @@ export default function LoginPage() {
             F
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">FlowLeads CRM</h1>
-            <p className="text-xs text-slate-500">Paridade Funcional e Experiência Pipefy</p>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">FlowLeads</h1>
+            <p className="text-xs text-blue-600 font-medium">by Grupo Mário Neto</p>
           </div>
         </div>
 

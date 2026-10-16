@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, use } from "react";
 import { AppShell } from "@/components/layout/AppShell";
@@ -69,7 +69,7 @@ export default function AutomationsPage({ params }: { params: Promise<{ id: stri
               <h1 className="text-lg font-bold text-slate-900 tracking-tight">Central de Automações No-Code</h1>
             </div>
             <p className="text-xs text-slate-500">
-              Configure regras automáticas de processo no estilo Pipefy (Gatilho &rarr; Ação).
+              Configure regras automáticas de processo e roteamento (Gatilho &rarr; Ação).
             </p>
           </div>
 
