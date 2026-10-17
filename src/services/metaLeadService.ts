@@ -182,6 +182,30 @@ export async function processMetaLead(
     }
   }
 
+  // Auto-vincular checklist padrão cadastrado pelo Supervisor
+  const org = await prisma.organization.findFirst();
+  if (org) {
+    const standardItems = await prisma.checklistItem.findMany({
+      where: { organizationId: org.id, isActive: true },
+      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+    });
+    if (standardItems.length > 0) {
+      await prisma.cardChecklist.create({
+        data: {
+          cardId: card.id,
+          title: "Checklist do Lead",
+          items: JSON.stringify(
+            standardItems.map((si) => ({
+              id: si.id,
+              text: si.title,
+              completed: false,
+            }))
+          ),
+        },
+      }).catch(() => {});
+    }
+  }
+
   // Assign user to card
   if (assignedToUserId) {
     await prisma.cardAssignee.create({

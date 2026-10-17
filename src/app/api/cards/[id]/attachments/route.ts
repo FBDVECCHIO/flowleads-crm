@@ -54,3 +54,32 @@ export async function POST(
     return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });
   }
 }
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
+  try {
+    const resolvedParams = await Promise.resolve(params);
+    await requireAuth(req).catch(() => null);
+
+    const { searchParams } = new URL(req.url);
+    let attachmentId = searchParams.get("attachmentId");
+    if (!attachmentId) {
+      const body = await req.json().catch(() => ({}));
+      attachmentId = body.attachmentId;
+    }
+
+    if (!attachmentId) {
+      return Response.json({ error: "attachmentId é obrigatório." }, { status: 400, headers: noStoreHeaders });
+    }
+
+    await prisma.cardAttachment.deleteMany({
+      where: { id: attachmentId, cardId: resolvedParams.id },
+    });
+
+    return Response.json({ success: true, message: "Anexo excluído com sucesso." }, { status: 200, headers: noStoreHeaders });
+  } catch (error: any) {
+    return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });
+  }
+}

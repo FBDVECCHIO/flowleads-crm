@@ -118,4 +118,55 @@ test("Phase Reordering with Strict Governance", async () => {
     // Swap back
     await PipeService.movePhaseDirection(pipe.id, targetPhase.id, "left");
   }
+
+  // Verify custom intermediate column containing 'novo' or 'fechamento' CAN be moved
+  const customPhase = await prisma.phase.create({
+    data: {
+      pipeId: pipe.id,
+      name: "Novo Contato Telefônico",
+      order: 3,
+      color: "#0284c7",
+    },
+  });
+
+  try {
+    // Should NOT throw because it is an intermediate phase, not an anchor
+    const res = await PipeService.movePhaseDirection(pipe.id, customPhase.id, "right");
+    assert.ok(res);
+  } finally {
+    await prisma.phase.delete({ where: { id: customPhase.id } }).catch(() => {});
+  }
+});
+
+test("Meta Lead Ingestion Auto-Attaches Standard Checklist", async () => {
+  const { processMetaLead } = await import("../src/services/metaLeadService.ts");
+
+  const org = await prisma.organization.findFirst();
+  assert.ok(org);
+
+  // Ensure at least one standard checklist item exists
+  const checklistItem = await prisma.checklistItem.create({
+    data: {
+      organizationId: org.id,
+      title: "Verificar documentação Meta Ads",
+      order: 1,
+      isActive: true,
+    },
+  });
+
+  const { cardId } = await processMetaLead("meta_test_leadgen_999", undefined, {
+    name: "Lead Meta Com Checklist",
+    phone: "11988887777",
+  });
+
+  assert.ok(cardId);
+  const card = await CardService.getCardById(cardId);
+  assert.ok(card);
+  assert.ok(card.checklists.length > 0, "Card should have checklist auto-attached");
+  const parsed = JSON.parse(card.checklists[0].items || "[]");
+  assert.ok(parsed.some((i: any) => i.text === "Verificar documentação Meta Ads"));
+
+  // Clean up
+  await prisma.card.delete({ where: { id: cardId } }).catch(() => {});
+  await prisma.checklistItem.delete({ where: { id: checklistItem.id } }).catch(() => {});
 });

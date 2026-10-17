@@ -16,7 +16,7 @@ export default function AutomationsPage({ params }: { params: Promise<{ id: stri
 
   const fetchAutomations = async () => {
     try {
-      const res = await fetch(`/api/automations?pipeId=${pipeId}`);
+      const res = await fetch(`/api/automations?pipeId=${pipeId}&_t=${Date.now()}`, { cache: "no-store" });
       const data = await res.json();
       setAutomations(data);
     } catch (err) {

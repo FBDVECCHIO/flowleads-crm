@@ -8,6 +8,7 @@ export interface CardItemProps {
   card: any;
   phases: any[];
   labels?: any[];
+  standardChecklists?: any[];
   onOpenCard: (card: any, tab?: string) => void;
   onMoveCard: (cardId: string, targetPhaseId: string) => void;
   onColorChange?: (cardId: string, color: string) => void;
@@ -20,6 +21,7 @@ export function CardItem({
   card,
   phases,
   labels,
+  standardChecklists,
   onOpenCard,
   onMoveCard,
   onColorChange,
@@ -31,12 +33,22 @@ export function CardItem({
   const nextPhase = phases[currentPhaseIndex + 1];
 
   let checklistProgress = { total: 0, done: 0 };
+  let cardItems: any[] = [];
   if (card.checklists && card.checklists.length > 0) {
     try {
-      const items = JSON.parse(card.checklists[0].items || "[]");
-      checklistProgress.total = items.length;
-      checklistProgress.done = items.filter((i: any) => i.completed).length;
+      cardItems = JSON.parse(card.checklists[0].items || "[]");
     } catch (e) {}
+  }
+
+  if (standardChecklists && standardChecklists.length > 0) {
+    checklistProgress.total = standardChecklists.length;
+    checklistProgress.done = standardChecklists.filter((sc) => {
+      const match = cardItems.find((ci) => ci.id === sc.id || ci.text === sc.title);
+      return Boolean(match?.completed);
+    }).length;
+  } else if (cardItems.length > 0) {
+    checklistProgress.total = cardItems.length;
+    checklistProgress.done = cardItems.filter((i: any) => i.completed).length;
   }
 
   const slaWarning = card.slaStatus === "WARNING";
@@ -48,14 +60,23 @@ export function CardItem({
 
   const hasCustomColor = card.color && card.color !== "#ffffff";
 
-  // Extrair dados explícitos do lead
-  const getValue = (identifier: string) => {
-    const valObj = card.values?.find((v: any) => v.field?.identifier === identifier);
-    return valObj?.value ? String(valObj.value).trim() : "";
+  // Extrair dados do lead com suporte resiliente a aliases
+  const getValue = (...identifiers: string[]) => {
+    for (const ident of identifiers) {
+      const normalizedIdent = ident.toLowerCase();
+      const valObj = card.values?.find((v: any) => {
+        const fieldKey = (v.field?.identifier || "").toLowerCase();
+        return fieldKey === normalizedIdent || fieldKey.includes(normalizedIdent);
+      });
+      if (valObj?.value && String(valObj.value).trim()) {
+        return String(valObj.value).trim();
+      }
+    }
+    return "";
   };
 
-  const clientName = (getValue("lead_name") || card.title || "LEAD SEM NOME").toUpperCase();
-  const rawPhone = getValue("lead_phone") || "";
+  const clientName = (getValue("lead_name", "name", "nome", "cliente") || card.title || "LEAD SEM NOME").toUpperCase();
+  const rawPhone = getValue("lead_phone", "whatsapp", "phone", "telefone", "celular");
   const clientPhone = rawPhone ? maskPhone(rawPhone) : "NÃO INFORMADO";
   const cleanPhoneDigits = rawPhone.replace(/\D/g, "");
   const whatsappUrl = cleanPhoneDigits
@@ -63,11 +84,11 @@ export function CardItem({
     : null;
 
   // Origem do Lead
-  const rawOrigin = getValue("lead_origin");
+  const rawOrigin = getValue("lead_origin", "origin", "origem");
   const origin = (rawOrigin || (card.creator ? "MANUAL" : "META ADS")).toUpperCase();
 
-  // Campanha atrelada
-  const rawCampaign = getValue("campaign_interest") || getValue("campaign");
+  // Campanha atrelada via META ou manual
+  const rawCampaign = getValue("campaign_interest", "campaign", "campanha");
   const campaign = (rawCampaign || "META ADS").toUpperCase();
 
   // Usuário responsável (assignee, creator, ou vendedor identificado por telefone/loja)
@@ -76,8 +97,8 @@ export function CardItem({
       ? card.assignees[0].user.name
       : card.creator?.name
       ? card.creator.name
-      : getValue("seller_name")
-      ? getValue("seller_name")
+      : getValue("seller_name", "seller", "vendedor", "responsavel", "consultor")
+      ? getValue("seller_name", "seller", "vendedor", "responsavel", "consultor")
       : "Sem resp.";
 
   return (
@@ -207,20 +228,6 @@ export function CardItem({
           </span>
         </div>
       </div>
-
-      {/* Botão de avanço rápido de fase no hover */}
-      {nextPhase && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onMoveCard(card.id, nextPhase.id);
-          }}
-          className="w-full mt-1 py-0.5 text-[9px] font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded border border-slate-200 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100"
-        >
-          <span>Avançar para {nextPhase.name}</span>
-          <span>&rarr;</span>
-        </button>
-      )}
     </div>
   );
 }

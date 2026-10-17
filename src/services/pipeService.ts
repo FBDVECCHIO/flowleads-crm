@@ -146,12 +146,21 @@ export class PipeService {
 
     if (allPhases.length <= 1) return allPhases;
 
-    const firstPhase = allPhases.find((p) => p.order === 1) || allPhases[0];
-    const lostPhase = allPhases.find((p) => p.isFinalLost) || allPhases[allPhases.length - 1];
-    const wonPhase = allPhases.find((p) => p.isFinalWon && p.id !== lostPhase.id) || allPhases[allPhases.length - 2];
+    const firstPhase =
+      allPhases.find((p) => p.order === 1 || /^(novos?\s+leads?|novo\s+lead)$/i.test(p.name)) || allPhases[0];
+    const lostPhase =
+      allPhases.find((p) => p.isFinalLost || /^(fechado\s+perdido|perdido)$/i.test(p.name)) ||
+      allPhases[allPhases.length - 1];
+    const wonPhase =
+      allPhases.find(
+        (p) =>
+          (p.isFinalWon || /^(fechado\s+ganho|fechado)$/i.test(p.name)) &&
+          p.id !== lostPhase.id &&
+          p.id !== firstPhase.id
+      ) || allPhases[allPhases.length - 2];
 
     // Filter out immutable anchor phases from reorderable list
-    const anchorIds = new Set([firstPhase.id, wonPhase?.id, lostPhase.id]);
+    const anchorIds = new Set([firstPhase.id, wonPhase?.id, lostPhase.id].filter(Boolean));
     const requestedIntermediates = orderedPhaseIds.filter((id) => !anchorIds.has(id));
     const existingIntermediates = allPhases.filter((p) => !anchorIds.has(p.id));
 
@@ -206,11 +215,20 @@ export class PipeService {
       throw new Error("Colunas padrão do sistema (Novos Leads, Fechado e Perdido) não podem ser movidas.");
     }
 
-    const firstPhase = allPhases.find((p) => p.order === 1) || allPhases[0];
-    const lostPhase = allPhases.find((p) => p.isFinalLost) || allPhases[allPhases.length - 1];
-    const wonPhase = allPhases.find((p) => p.isFinalWon && p.id !== lostPhase.id) || allPhases[allPhases.length - 2];
+    const firstPhase =
+      allPhases.find((p) => p.order === 1 || /^(novos?\s+leads?|novo\s+lead)$/i.test(p.name)) || allPhases[0];
+    const lostPhase =
+      allPhases.find((p) => p.isFinalLost || /^(fechado\s+perdido|perdido)$/i.test(p.name)) ||
+      allPhases[allPhases.length - 1];
+    const wonPhase =
+      allPhases.find(
+        (p) =>
+          (p.isFinalWon || /^(fechado\s+ganho|fechado)$/i.test(p.name)) &&
+          p.id !== lostPhase.id &&
+          p.id !== firstPhase.id
+      ) || allPhases[allPhases.length - 2];
 
-    const anchorIds = new Set([firstPhase.id, wonPhase?.id, lostPhase.id]);
+    const anchorIds = new Set([firstPhase.id, wonPhase?.id, lostPhase.id].filter(Boolean));
     const intermediatePhases = allPhases.filter((p) => !anchorIds.has(p.id));
 
     const currentIndex = intermediatePhases.findIndex((p) => p.id === phaseId);
@@ -237,10 +255,9 @@ export function isImmutablePhase(phase: { name?: string; order?: number; isFinal
   if (phase.isFinalLost) return true;
   const normalized = (phase.name || "").trim().toLowerCase();
   if (
-    normalized.includes("novo") ||
-    normalized.includes("ganho") ||
-    normalized.includes("fechado") ||
-    normalized.includes("perdido")
+    /^(novos?\s+leads?|novo\s+lead)$/i.test(normalized) ||
+    /^(fechado\s+ganho|fechado)$/i.test(normalized) ||
+    /^(fechado\s+perdido|perdido)$/i.test(normalized)
   ) {
     return true;
   }

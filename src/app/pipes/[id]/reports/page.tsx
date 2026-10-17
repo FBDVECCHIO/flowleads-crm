@@ -11,7 +11,7 @@ export default function ReportsPage({ params }: { params: Promise<{ id: string }
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/reports?pipeId=${pipeId}`)
+    fetch(`/api/reports?pipeId=${pipeId}&_t=${Date.now()}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => setReportData(data))
       .catch((err) => console.error(err))

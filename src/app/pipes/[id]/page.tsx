@@ -28,6 +28,9 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
   const [viewMode, setViewMode] = useState<"kanban" | "list" | "table">("kanban");
   const [selectedCard, setSelectedCard] = useState<any>(null);
 
+  // Checklist State
+  const [standardChecklists, setStandardChecklists] = useState<any[]>([]);
+
   // New Column / Phase Modal State
   const [isNewPhaseModalOpen, setIsNewPhaseModalOpen] = useState(false);
   const [newPhaseName, setNewPhaseName] = useState("");
@@ -46,13 +49,14 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
   const fetchData = async () => {
     try {
       const t = Date.now();
-      const [pRes, cRes, lRes, aRes, sRes, campRes] = await Promise.all([
+      const [pRes, cRes, lRes, aRes, sRes, campRes, chkRes] = await Promise.all([
         fetch(`/api/pipes/${pipeId}?_t=${t}`, { cache: "no-store" }),
         fetch(`/api/cards?pipeId=${pipeId}&_t=${t}`, { cache: "no-store" }),
         fetch(`/api/labels?pipeId=${pipeId}&_t=${t}`, { cache: "no-store" }),
         fetch(`/api/auth/me?_t=${t}`, { cache: "no-store" }),
         fetch(`/api/stores?_t=${t}`, { cache: "no-store" }),
         fetch(`/api/campaigns?_t=${t}`, { cache: "no-store" }),
+        fetch(`/api/checklists?_t=${t}`, { cache: "no-store" }),
       ]);
       if (pRes.ok) {
         const pData = await pRes.json();
@@ -76,12 +80,14 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
       const aData = aRes.ok ? await aRes.json() : null;
       const sData = sRes.ok ? await sRes.json() : [];
       const campData = campRes.ok ? await campRes.json() : [];
+      const chkData = chkRes.ok ? await chkRes.json() : [];
 
       setCards(Array.isArray(cData) ? cData : []);
       setLabels(Array.isArray(lData) ? lData : []);
       if (aData?.user) setCurrentUser(aData.user);
       setStores(Array.isArray(sData) ? sData : []);
       setCampaigns(Array.isArray(campData) ? campData : []);
+      setStandardChecklists(Array.isArray(chkData) ? chkData : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -353,8 +359,8 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content, authorName: "Equipe Comercial" }),
     });
-    const res = await fetch(`/api/cards/${cardId}`);
-    setSelectedCard(await res.json());
+    const res = await fetch(`/api/cards/${cardId}?_t=${Date.now()}`, { cache: "no-store" });
+    if (res.ok) setSelectedCard(await res.json());
     await fetchData();
   };
 
@@ -364,8 +370,8 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ checklistId, itemId, completed }),
     });
-    const res = await fetch(`/api/cards/${cardId}`);
-    setSelectedCard(await res.json());
+    const res = await fetch(`/api/cards/${cardId}?_t=${Date.now()}`, { cache: "no-store" });
+    if (res.ok) setSelectedCard(await res.json());
     await fetchData();
   };
 
@@ -719,6 +725,7 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
                   phases={pipe.phases}
                   cards={cards}
                   labels={labels}
+                  standardChecklists={standardChecklists}
                   onOpenCard={handleOpenCard}
                   onMoveCard={handleMoveCard}
                   onColorChange={handleColorChange}

@@ -164,6 +164,26 @@ export function CardDrawer({
     }
   };
 
+  const handleDeleteAttachment = async (attachmentId: string) => {
+    if (!confirm("Deseja realmente excluir este anexo permanentemente?")) return;
+    try {
+      const res = await fetch(`/api/cards/${card.id}/attachments?attachmentId=${attachmentId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Erro ao excluir anexo.");
+      }
+      if (card.attachments) {
+        card.attachments = card.attachments.filter((a: any) => a.id !== attachmentId);
+      }
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    }
+  };
+
   if (!card) return null;
 
   const currentPhase = phases.find((p) => p.id === card.currentPhaseId);
@@ -786,15 +806,25 @@ export function CardDrawer({
                           </p>
                         </div>
                       </div>
-                      <a
-                        href={att.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-2.5 py-1 text-[11px] font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded border border-blue-200 flex items-center gap-1"
-                      >
-                        <Download className="w-3 h-3" />
-                        <span>Visualizar anexo</span>
-                      </a>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <a
+                          href={att.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2.5 py-1 text-[11px] font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded border border-blue-200 flex items-center gap-1"
+                        >
+                          <Download className="w-3 h-3" />
+                          <span>Visualizar anexo</span>
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAttachment(att.id)}
+                          className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded border border-slate-200 transition-colors"
+                          title="Excluir anexo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

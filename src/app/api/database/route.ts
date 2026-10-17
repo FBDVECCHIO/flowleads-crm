@@ -1,5 +1,14 @@
 import { prisma } from "../../../lib/prisma.ts";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const noStoreHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  "Pragma": "no-cache",
+  "Expires": "0",
+};
+
 export async function GET() {
   try {
     const tables = await prisma.databaseTable.findMany({
@@ -8,8 +17,8 @@ export async function GET() {
         _count: { select: { records: true } },
       },
     });
-    return Response.json(tables);
+    return Response.json(tables, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });
   }
 }

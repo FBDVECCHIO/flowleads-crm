@@ -10,6 +10,7 @@ export interface KanbanColumnProps {
   phases: any[];
   cards: any[];
   labels?: any[];
+  standardChecklists?: any[];
   onOpenCard: (card: any, tab?: string) => void;
   onMoveCard: (cardId: string, targetPhaseId: string) => void;
   onColorChange?: (cardId: string, color: string) => void;
@@ -28,6 +29,7 @@ export function KanbanColumn({
   phases,
   cards,
   labels,
+  standardChecklists,
   onOpenCard,
   onMoveCard,
   onColorChange,
@@ -59,18 +61,23 @@ export function KanbanColumn({
   const totalValue = phaseCards.reduce((acc, c) => acc + (c.dealValue || 0), 0);
 
   // Governança estrita:
-  // Coluna 1: Novos Leads (imutável)
-  // Penúltima: Fechado (isFinalWon, imutável)
-  // Última: Perdido (isFinalLost, imutável)
-  const isFirst = phase.order === 1 || /novo/i.test(phase.name || "");
-  const isWon = Boolean(phase.isFinalWon || /fechado\s*ganho|^fechado$/i.test(phase.name || ""));
-  const isLost = Boolean(phase.isFinalLost || /fechado\s*perdido|^perdido$/i.test(phase.name || ""));
+  // Coluna 1: NOVOS LEADS (imutável na 1ª posição)
+  // Penúltima: FECHADO (isFinalWon, imutável)
+  // Última: PERDIDO (isFinalLost, imutável)
+  const isFirst = phase.order === 1 || /^(novos?\s+leads?|novo\s+lead)$/i.test(phase.name || "");
+  const isWon = Boolean(phase.isFinalWon || /^(fechado\s*ganho|fechado)$/i.test(phase.name || ""));
+  const isLost = Boolean(phase.isFinalLost || /^(fechado\s*perdido|perdido)$/i.test(phase.name || ""));
   const isImmutable = isFirst || isWon || isLost;
 
-  // Identificar índice e capacidade de movimentação entre as colunas intermediárias
-  const intermediatePhases = phases.filter(
-    (p) => !(p.order === 1 || /novo/i.test(p.name || "") || p.isFinalWon || p.isFinalLost || /fechado|perdido/i.test(p.name || ""))
-  );
+  // Identificar colunas intermediárias reordenáveis (excluindo os âncoras)
+  const firstPhaseId = phases[0]?.id;
+  const lostPhaseId = phases.find((p) => p.isFinalLost)?.id || phases[phases.length - 1]?.id;
+  const wonPhaseId =
+    phases.find((p) => (p.isFinalWon || /fechado/i.test(p.name)) && p.id !== lostPhaseId)?.id ||
+    phases[phases.length - 2]?.id;
+
+  const anchorIds = new Set([firstPhaseId, wonPhaseId, lostPhaseId].filter(Boolean));
+  const intermediatePhases = phases.filter((p) => !anchorIds.has(p.id));
   const intermediateIndex = intermediatePhases.findIndex((p) => p.id === phase.id);
   const canMoveLeft = !isImmutable && intermediateIndex > 0;
   const canMoveRight = !isImmutable && intermediateIndex >= 0 && intermediateIndex < intermediatePhases.length - 1;
@@ -259,6 +266,7 @@ export function KanbanColumn({
               card={card}
               phases={phases}
               labels={labels}
+              standardChecklists={standardChecklists}
               onOpenCard={onOpenCard}
               onMoveCard={onMoveCard}
               onColorChange={onColorChange}

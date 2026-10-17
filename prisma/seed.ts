@@ -325,7 +325,7 @@ async function main() {
   const phaseWon = await prisma.phase.create({
     data: {
       pipeId: pipe.id,
-      name: "Fechado Ganho",
+      name: "FECHADO",
       description: "Negócio fechado e enviado para Onboarding",
       order: 6,
       color: "#10b981",
@@ -336,7 +336,7 @@ async function main() {
   const phaseLost = await prisma.phase.create({
     data: {
       pipeId: pipe.id,
-      name: "Fechado Perdido",
+      name: "PERDIDO",
       description: "Oportunidade perdida com registro do motivo",
       order: 7,
       color: "#ef4444",

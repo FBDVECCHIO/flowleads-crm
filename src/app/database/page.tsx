@@ -17,7 +17,7 @@ export default function DatabasePage() {
 
   const fetchTables = async () => {
     try {
-      const res = await fetch("/api/database");
+      const res = await fetch(`/api/database?_t=${Date.now()}`, { cache: "no-store" });
       const data = await res.json();
       setTables(data);
       if (data.length > 0) {
@@ -32,7 +32,7 @@ export default function DatabasePage() {
   };
 
   const loadRecords = async (tableId: string) => {
-    const res = await fetch(`/api/database/${tableId}/records`);
+    const res = await fetch(`/api/database/${tableId}/records?_t=${Date.now()}`, { cache: "no-store" });
     const data = await res.json();
     setRecords(data);
   };

@@ -1,10 +1,19 @@
 import { prisma } from "../../../lib/prisma.ts";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const noStoreHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  "Pragma": "no-cache",
+  "Expires": "0",
+};
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const pipeId = searchParams.get("pipeId");
-    if (!pipeId) return Response.json({ error: "pipeId obrigatório" }, { status: 400 });
+    if (!pipeId) return Response.json({ error: "pipeId obrigatório" }, { status: 400, headers: noStoreHeaders });
 
     const pipe = await prisma.pipe.findUnique({
       where: { id: pipeId },
@@ -18,7 +27,7 @@ export async function GET(req: Request) {
         },
       },
     });
-    if (!pipe) return Response.json({ error: "Pipe não encontrado" }, { status: 404 });
+    if (!pipe) return Response.json({ error: "Pipe não encontrado" }, { status: 404, headers: noStoreHeaders });
 
     const totalCards = pipe.cards.length;
     const wonCards = pipe.cards.filter((c) => c.currentPhase.isFinalWon);
@@ -44,19 +53,22 @@ export async function GET(req: Request) {
       };
     });
 
-    return Response.json({
-      summary: {
-        totalCards,
-        activeCards: activeCards.length,
-        wonCards: wonCards.length,
-        lostCards: lostCards.length,
-        totalPipelineValue,
-        wonValue,
-        conversionRate: Math.round(conversionRate * 10) / 10,
+    return Response.json(
+      {
+        summary: {
+          totalCards,
+          activeCards: activeCards.length,
+          wonCards: wonCards.length,
+          lostCards: lostCards.length,
+          totalPipelineValue,
+          wonValue,
+          conversionRate: Math.round(conversionRate * 10) / 10,
+        },
+        funnel,
       },
-      funnel,
-    });
+      { status: 200, headers: noStoreHeaders }
+    );
   } catch (error: any) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });
   }
 }
