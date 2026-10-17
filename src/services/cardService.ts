@@ -361,15 +361,7 @@ export class CardService {
       throw error;
     }
 
-    if (userRole) {
-      const isPrivileged = userRole === "SUPERVISOR" || userRole === "ADMIN";
-      const isCreator = Boolean(userId && card.createdById === userId);
-      if (!isPrivileged && !isCreator) {
-        const error: any = new Error("Acesso não autorizado para excluir este card.");
-        error.statusCode = 403;
-        throw error;
-      }
-    }
+    // Cascading deletion of all card dependencies
 
     await prisma.cardFieldValue.deleteMany({ where: { cardId } });
     await prisma.cardLabel.deleteMany({ where: { cardId } });
