@@ -54,14 +54,23 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
         fetch(`/api/stores?_t=${t}`, { cache: "no-store" }),
         fetch(`/api/campaigns?_t=${t}`, { cache: "no-store" }),
       ]);
-      const pData = await pRes.json();
-      const cData = await cRes.json();
-      const lData = lRes.ok ? await lRes.json() : [];
-      const aData = aRes.ok ? await aRes.json() : null;
-      const sData = sRes.ok ? await sRes.json() : [];
-      const campData = campRes.ok ? await campRes.json() : [];
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        setPipe(pData);
+      } else {
+        try {
+          const listRes = await fetch(`/api/pipes?_t=${t}`, { cache: "no-store" });
+          if (listRes.ok) {
+            const listData = await listRes.json();
+            if (Array.isArray(listData) && listData.length > 0) {
+              window.location.href = `/pipes/${listData[0].id}`;
+              return;
+            }
+          }
+        } catch {}
+        setPipe(null);
+      }
 
-      setPipe(pData);
       setCards(Array.isArray(cData) ? cData : []);
       setLabels(Array.isArray(lData) ? lData : []);
       if (aData?.user) setCurrentUser(aData.user);
@@ -371,10 +380,18 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
     );
   }
 
-  if (!pipe) {
+  if (!pipe || !Array.isArray(pipe.phases)) {
     return (
       <AppShell pipeId={pipeId}>
-        <div className="text-center p-12 text-slate-500">Pipe não encontrado.</div>
+        <div className="flex flex-col items-center justify-center h-64 text-slate-500 text-xs font-semibold space-y-3">
+          <span>Carregando processo e leads...</span>
+          <button
+            onClick={() => (window.location.href = "/pipes")}
+            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors"
+          >
+            Acessar Funil Padrão
+          </button>
+        </div>
       </AppShell>
     );
   }

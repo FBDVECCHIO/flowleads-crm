@@ -135,7 +135,24 @@ export function Sidebar({
     window.addEventListener("mouseup", handleMouseUp);
   };
 
-  const currentPipeId = pipeId || "";
+  const [activePipeId, setActivePipeId] = useState(pipeId && pipeId !== "default" ? pipeId : "");
+
+  useEffect(() => {
+    if (pipeId && pipeId !== "default") {
+      setActivePipeId(pipeId);
+    } else {
+      fetch("/api/pipes", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data) && data.length > 0) {
+            setActivePipeId(data[0].id);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [pipeId]);
+
+  const currentPipeId = activePipeId || pipeId || "";
 
   // Itens de navegação oficial do FlowLeads by Grupo Mário Neto
   const navItems = [
