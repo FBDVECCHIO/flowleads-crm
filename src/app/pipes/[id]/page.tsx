@@ -71,6 +71,12 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
         setPipe(null);
       }
 
+      const cData = cRes.ok ? await cRes.json() : [];
+      const lData = lRes.ok ? await lRes.json() : [];
+      const aData = aRes.ok ? await aRes.json() : null;
+      const sData = sRes.ok ? await sRes.json() : [];
+      const campData = campRes.ok ? await campRes.json() : [];
+
       setCards(Array.isArray(cData) ? cData : []);
       setLabels(Array.isArray(lData) ? lData : []);
       if (aData?.user) setCurrentUser(aData.user);
