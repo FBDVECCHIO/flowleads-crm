@@ -7,6 +7,10 @@ async function main() {
   console.log("Iniciando seed do FlowLeads CRM...");
 
   // 1. Limpar banco existente
+  await prisma.systemMessage.deleteMany();
+  await prisma.campaign.deleteMany();
+  await prisma.seller.deleteMany();
+  await prisma.store.deleteMany();
   await prisma.cardAttachment.deleteMany();
   await prisma.emailOutbox.deleteMany();
   await prisma.webhook.deleteMany();
@@ -33,6 +37,147 @@ async function main() {
     data: {
       name: "Grupo Mário Neto",
       slug: "grupo-mario-neto",
+    },
+  });
+
+  // 2.1 Cadastros: Lojas Físicas de Ótica
+  const storeMatriz = await prisma.store.create({
+    data: {
+      organizationId: org.id,
+      name: "Ótica Centro - Matriz",
+      description: "Rua Direita, 120, Centro - SP. Atendimento premium e laboratório próprio.",
+      phone: "+551132145500",
+      isActive: true,
+    },
+  });
+
+  const storeShoppingSul = await prisma.store.create({
+    data: {
+      organizationId: org.id,
+      name: "Ótica Shopping Sul",
+      description: "Av. das Nações, 500, Loja 42, Shopping Sul. Aberto seg a sab até 22h.",
+      phone: "+551133458800",
+      isActive: true,
+    },
+  });
+
+  const storeNortePlaza = await prisma.store.create({
+    data: {
+      organizationId: org.id,
+      name: "Ótica Norte Plaza",
+      description: "Av. Brasil, 1500, Loja 110, Norte Plaza. Amplo estacionamento e consultório credenciado.",
+      phone: "+551134569900",
+      isActive: true,
+    },
+  });
+
+  // 2.2 Cadastros: Vendedores e Captadores
+  await prisma.seller.createMany({
+    data: [
+      {
+        organizationId: org.id,
+        storeId: storeMatriz.id,
+        name: "Lucas Ferreira",
+        role: "VENDEDOR",
+        phone: "+5511981112222",
+        isActive: true,
+      },
+      {
+        organizationId: org.id,
+        storeId: storeMatriz.id,
+        name: "Juliana Mendes",
+        role: "CAPTADOR",
+        phone: "+5511982223333",
+        isActive: true,
+      },
+      {
+        organizationId: org.id,
+        storeId: storeShoppingSul.id,
+        name: "Roberto Rocha",
+        role: "VENDEDOR",
+        phone: "+5511983334444",
+        isActive: true,
+      },
+      {
+        organizationId: org.id,
+        storeId: storeShoppingSul.id,
+        name: "Aline Souza",
+        role: "CAPTADOR",
+        phone: "+5511984445555",
+        isActive: true,
+      },
+      {
+        organizationId: org.id,
+        storeId: storeNortePlaza.id,
+        name: "Fernando Dias",
+        role: "VENDEDOR",
+        phone: "+5511985556666",
+        isActive: true,
+      },
+    ],
+  });
+
+  // 2.3 Cadastros: Campanhas Meta Ads / Marketing
+  await prisma.campaign.create({
+    data: {
+      organizationId: org.id,
+      name: "Campanha Óculos Completo 2026",
+      description: "Armação de acetato ou titânio + lentes visão simples com antirreflexo.",
+      imageUrl: "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=400&q=80",
+      startDate: new Date("2026-01-01"),
+      endDate: new Date("2026-12-31"),
+      products: "armação, lente, óculos completo",
+      eligibleStores: JSON.stringify([storeMatriz.id, storeShoppingSul.id, storeNortePlaza.id]),
+      isActive: true,
+    },
+  });
+
+  await prisma.campaign.create({
+    data: {
+      organizationId: org.id,
+      name: "Campanha Lentes Digitais Anti-Blue",
+      description: "Lentes com filtro de luz azul para proteção em telas e escritório.",
+      imageUrl: "https://images.unsplash.com/photo-1591076482161-42ce6da69f67?w=400&q=80",
+      startDate: new Date("2026-02-01"),
+      endDate: new Date("2026-12-31"),
+      products: "lente, óculos completo",
+      eligibleStores: JSON.stringify([storeMatriz.id, storeShoppingSul.id]),
+      isActive: true,
+    },
+  });
+
+  await prisma.campaign.create({
+    data: {
+      organizationId: org.id,
+      name: "Campanha Armações Solares Verão",
+      description: "Armações solares com proteção UV400 com ou sem graduação.",
+      imageUrl: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&q=80",
+      startDate: new Date("2026-03-01"),
+      endDate: new Date("2026-11-30"),
+      products: "armação",
+      eligibleStores: JSON.stringify([storeMatriz.id, storeNortePlaza.id]),
+      isActive: true,
+    },
+  });
+
+  // 2.4 Cadastros: Mensagens e Comunicados da Central (visíveis no Sino)
+  await prisma.systemMessage.create({
+    data: {
+      organizationId: org.id,
+      title: "Boas-vindas à Central FlowLeads Óticas",
+      content: "Central de atendimento ativa para distribuição de leads nas lojas físicas. Registre a OS e a data da visita assim que o cliente confirmar.",
+      authorName: "Supervisor Geral",
+      priority: "NORMAL",
+    },
+  });
+
+  await prisma.systemMessage.create({
+    data: {
+      organizationId: org.id,
+      title: "Urgente: Foco na Campanha Óculos Completo",
+      content: "Atenção consultores: prioridade de agendamento para os leads da Campanha Óculos Completo 2026 nas lojas Centro e Shopping Sul.",
+      authorName: "Gerência Comercial",
+      priority: "URGENTE",
     },
   });
 
@@ -272,6 +417,106 @@ async function main() {
       type: "TEXTAREA",
       placeholder: "Descreva a dor ou objetivo principal do lead...",
       order: 7,
+    },
+  });
+
+  // Campos específicos de Óticas e Distribuição para Lojas Físicas
+  const fieldLeadDate = await prisma.field.create({
+    data: {
+      pipeId: pipe.id,
+      label: "Data do Contato",
+      identifier: "lead_date",
+      type: "DATE",
+      order: 8,
+    },
+  });
+
+  const fieldCampaign = await prisma.field.create({
+    data: {
+      pipeId: pipe.id,
+      label: "Campanha de Interesse",
+      identifier: "campaign_interest",
+      type: "SELECT",
+      options: JSON.stringify([
+        "Campanha Óculos Completo 2026",
+        "Campanha Lentes Digitais Anti-Blue",
+        "Campanha Armações Solares Verão"
+      ]),
+      order: 9,
+    },
+  });
+
+  const fieldStore = await prisma.field.create({
+    data: {
+      pipeId: pipe.id,
+      label: "Loja Negociada",
+      identifier: "store_negotiated",
+      type: "SELECT",
+      options: JSON.stringify([
+        "Ótica Centro - Matriz",
+        "Ótica Shopping Sul",
+        "Ótica Norte Plaza"
+      ]),
+      order: 10,
+    },
+  });
+
+  const fieldEstimatedVisit = await prisma.field.create({
+    data: {
+      pipeId: pipe.id,
+      label: "Data e Horário Estimada da Visita",
+      identifier: "estimated_visit_datetime",
+      type: "TEXT",
+      placeholder: "Ex: 2026-10-20 15:30",
+      order: 11,
+    },
+  });
+
+  const fieldOsNumber = await prisma.field.create({
+    data: {
+      pipeId: pipe.id,
+      label: "Número da OS",
+      identifier: "os_number",
+      type: "TEXT",
+      placeholder: "Ex: OS-2026-0941",
+      order: 12,
+    },
+  });
+
+  const fieldSaleDate = await prisma.field.create({
+    data: {
+      pipeId: pipe.id,
+      label: "Data da Venda",
+      identifier: "sale_date",
+      type: "DATE",
+      order: 13,
+    },
+  });
+
+  const fieldSaleAmount = await prisma.field.create({
+    data: {
+      pipeId: pipe.id,
+      label: "Valor Final da Venda (R$)",
+      identifier: "sale_amount",
+      type: "CURRENCY",
+      order: 14,
+    },
+  });
+
+  const fieldSeller = await prisma.field.create({
+    data: {
+      pipeId: pipe.id,
+      label: "Vendedor que Atendeu",
+      identifier: "seller_name",
+      type: "SELECT",
+      options: JSON.stringify([
+        "Lucas Ferreira",
+        "Juliana Mendes",
+        "Roberto Rocha",
+        "Aline Souza",
+        "Fernando Dias"
+      ]),
+      order: 15,
     },
   });
 

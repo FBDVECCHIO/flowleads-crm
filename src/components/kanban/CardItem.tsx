@@ -13,6 +13,7 @@ export interface CardItemProps {
   onColorChange?: (cardId: string, color: string) => void;
   onDeleteCard?: (cardId: string) => void;
   onApplyTag?: (cardId: string, labelId: string) => void;
+  onRenameCard?: (cardId: string, newTitle: string) => void;
 }
 
 export function CardItem({
@@ -24,6 +25,7 @@ export function CardItem({
   onColorChange,
   onDeleteCard,
   onApplyTag,
+  onRenameCard,
 }: CardItemProps) {
   const currentPhaseIndex = phases.findIndex((p) => p.id === card.currentPhaseId);
   const nextPhase = phases[currentPhaseIndex + 1];
@@ -77,6 +79,7 @@ export function CardItem({
             onApplyTag={(labelId) => onApplyTag?.(card.id, labelId)}
             onOpenAttachments={() => onOpenCard(card, "attachments")}
             onDeleteCard={onDeleteCard ? () => onDeleteCard(card.id) : undefined}
+            onRenameCard={onRenameCard}
           />
         </div>
       </div>

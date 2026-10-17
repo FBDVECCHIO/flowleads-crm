@@ -9,6 +9,7 @@ import {
   Paperclip,
   Trash2,
   Check,
+  Pencil,
 } from "lucide-react";
 
 export interface CardContextMenuProps {
@@ -20,6 +21,7 @@ export interface CardContextMenuProps {
   onApplyTag?: (labelId: string) => void;
   onOpenAttachments?: () => void;
   onDeleteCard?: () => void;
+  onRenameCard?: (cardId: string, newTitle: string) => void;
 }
 
 const COLOR_PALETTE = [
@@ -41,9 +43,12 @@ export function CardContextMenu({
   onApplyTag,
   onOpenAttachments,
   onDeleteCard,
+  onRenameCard,
 }: CardContextMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState<"color" | "move" | "tag" | null>(null);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renamedTitle, setRenamedTitle] = useState(card.title || "");
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -51,6 +56,7 @@ export function CardContextMenu({
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setActiveSubmenu(null);
+        setIsRenaming(false);
       }
     }
     if (isOpen) {
@@ -65,6 +71,16 @@ export function CardContextMenu({
     e.stopPropagation();
     setIsOpen((prev) => !prev);
     setActiveSubmenu(null);
+    setIsRenaming(false);
+    setRenamedTitle(card.title || "");
+  };
+
+  const handleSaveRename = () => {
+    if (renamedTitle.trim() && renamedTitle.trim() !== card.title) {
+      onRenameCard?.(card.id, renamedTitle.trim());
+    }
+    setIsRenaming(false);
+    setIsOpen(false);
   };
 
   return (
@@ -82,8 +98,56 @@ export function CardContextMenu({
       {isOpen && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute right-0 top-full mt-1 w-52 bg-white rounded-lg shadow-xl border border-slate-200 z-50 py-1 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-100"
+          className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-xl border border-slate-200 z-50 py-1 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-100"
         >
+          {/* Action: Renomear Card */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsRenaming(!isRenaming);
+                setActiveSubmenu(null);
+              }}
+              className="w-full px-3 py-2 flex items-center gap-2 hover:bg-slate-50 transition-colors text-left font-medium"
+            >
+              <Pencil className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+              <span>Renomear card</span>
+            </button>
+
+            {isRenaming && (
+              <div className="p-2.5 border-t border-slate-100 bg-slate-50 space-y-1.5">
+                <span className="text-[10px] font-bold text-slate-600 block">Novo nome do lead:</span>
+                <input
+                  type="text"
+                  autoFocus
+                  value={renamedTitle}
+                  onChange={(e) => setRenamedTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSaveRename();
+                    if (e.key === "Escape") setIsRenaming(false);
+                  }}
+                  className="w-full px-2 py-1 text-xs bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <div className="flex justify-end gap-1 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsRenaming(false)}
+                    className="px-2 py-0.5 text-[10px] text-slate-500 hover:bg-slate-200 rounded"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveRename}
+                    className="px-2.5 py-0.5 text-[10px] bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold transition-colors"
+                  >
+                    Salvar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Action 1: Alterar Cor do Card */}
           <div className="relative">
             <button

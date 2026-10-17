@@ -1,4 +1,5 @@
-import { CardService, deleteCard, updateCardColor, moveCard, updateCardFields, getCardById } from "../../../../services/cardService.ts";
+import { CardService, deleteCard, updateCardColor, moveCard, updateCardFields, updateCardTitle, getCardById } from "../../../../services/cardService.ts";
+import { prisma } from "../../../../lib/prisma.ts";
 import { requireAuth } from "../../../../lib/auth.ts";
 
 export async function GET(
@@ -43,6 +44,21 @@ export async function PATCH(
     const userId = session?.userId || req.headers.get("x-user-id") || undefined;
 
     const body = await req.json();
+
+    if (body.title) {
+      const updated = await updateCardTitle(resolvedParams.id, body.title, userId);
+      return Response.json(updated);
+    }
+
+    if (body.dealValue !== undefined) {
+      const val = parseFloat(body.dealValue) || 0;
+      await prisma.card.update({
+        where: { id: resolvedParams.id },
+        data: { dealValue: val },
+      });
+      const updated = await getCardById(resolvedParams.id);
+      return Response.json(updated);
+    }
 
     if (body.color) {
       const updated = await updateCardColor(resolvedParams.id, body.color);

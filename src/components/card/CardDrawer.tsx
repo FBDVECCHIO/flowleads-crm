@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { 
   X, 
   CheckSquare, 
@@ -11,7 +11,12 @@ import {
   FileText,
   Download,
   Upload,
-  Plus
+  Plus,
+  Pencil,
+  Trash2,
+  Check,
+  Building2,
+  Sparkles
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -24,6 +29,8 @@ export interface CardDrawerProps {
   onMovePhase: (cardId: string, targetPhaseId: string, fieldValues?: Record<string, string>) => Promise<void>;
   onAddComment: (cardId: string, content: string) => Promise<void>;
   onToggleChecklist: (cardId: string, checklistId: string, itemId: string, completed: boolean) => Promise<void>;
+  onDeleteCard?: (cardId: string) => void;
+  onRenameCard?: (cardId: string, newTitle: string) => Promise<void> | void;
   defaultTab?: "fields" | "checklist" | "activity" | "attachments";
 }
 
@@ -36,6 +43,8 @@ export function CardDrawer({
   onMovePhase,
   onAddComment,
   onToggleChecklist,
+  onDeleteCard,
+  onRenameCard,
   defaultTab = "fields",
 }: CardDrawerProps) {
   const [activeTab, setActiveTab] = useState<"fields" | "checklist" | "activity" | "attachments">(defaultTab || "fields");
@@ -48,11 +57,55 @@ export function CardDrawer({
     }
     return map;
   });
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [currentTitle, setCurrentTitle] = useState(card?.title || "");
+  const [stores, setStores] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [sellers, setSellers] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setCurrentTitle(card?.title || "");
+    // Carregar Lojas, Campanhas e Vendedores para crosscheck nos selects
+    const loadCrosscheckData = async () => {
+      try {
+        const [sRes, cRes, selRes] = await Promise.all([
+          fetch("/api/stores"),
+          fetch("/api/campaigns"),
+          fetch("/api/sellers"),
+        ]);
+        if (sRes.ok) setStores(await sRes.json());
+        if (cRes.ok) setCampaigns(await cRes.json());
+        if (selRes.ok) setSellers(await selRes.json());
+      } catch (err) {
+        // Fallback gracioso
+      }
+    };
+    loadCrosscheckData();
+  }, [card]);
+
+  const handleSaveTitle = async () => {
+    if (!currentTitle.trim()) return;
+    try {
+      if (onRenameCard) {
+        await onRenameCard(card.id, currentTitle.trim());
+      } else {
+        await fetch(`/api/cards/${card.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: currentTitle.trim() }),
+        });
+      }
+      card.title = currentTitle.trim();
+      setIsEditingTitle(false);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Erro ao renomear card.");
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -160,15 +213,79 @@ export function CardDrawer({
               </span>
               <span className="text-xs text-slate-400 font-mono">ID: {card.id.slice(-6)}</span>
             </div>
-            <h2 className="text-base font-bold text-slate-900 leading-tight">{card.title}</h2>
+
+            {isEditingTitle ? (
+              <div className="flex items-center gap-1.5 mt-1">
+                <input
+                  type="text"
+                  autoFocus
+                  value={currentTitle}
+                  onChange={(e) => setCurrentTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSaveTitle();
+                    if (e.key === "Escape") setIsEditingTitle(false);
+                  }}
+                  className="px-2 py-1 text-sm font-bold text-slate-900 border border-blue-400 rounded focus:ring-1 focus:ring-blue-500 w-full"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveTitle}
+                  className="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 shrink-0"
+                  title="Salvar nome"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingTitle(false)}
+                  className="p-1.5 bg-slate-200 text-slate-600 rounded hover:bg-slate-300 shrink-0"
+                  title="Cancelar"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 group">
+                <h2 className="text-base font-bold text-slate-900 leading-tight">{card.title}</h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentTitle(card.title);
+                    setIsEditingTitle(true);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-blue-600 transition-opacity"
+                  title="Renomear Lead"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onDeleteCard && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm("Deseja realmente excluir este lead permanentemente?")) {
+                    onDeleteCard(card.id);
+                    onClose();
+                  }
+                }}
+                className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                title="Excluir lead"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="p-1 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="px-4 py-2 bg-slate-100 border-b border-slate-200 flex items-center gap-1 overflow-x-auto text-xs">
@@ -243,54 +360,142 @@ export function CardDrawer({
           {activeTab === "fields" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="text-xs font-bold text-slate-700">Formulário de Informações</span>
+                <div>
+                  <span className="text-xs font-bold text-slate-800">Formulário de Informações do Lead</span>
+                  <p className="text-[10px] text-slate-400">Preencha os dados de distribuição para a loja física</p>
+                </div>
                 <button
                   onClick={handleSaveFields}
                   disabled={saving}
-                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded shadow-sm transition-colors"
+                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded shadow-sm transition-colors"
                 >
                   {saving ? "Salvando..." : "Salvar Alterações"}
                 </button>
               </div>
 
-              {visibleFields.map((field) => (
-                <div key={field.id} className="space-y-1">
-                  <label className="block text-xs font-semibold text-slate-700">
-                    {field.label} {field.isRequired && <span className="text-red-500">*</span>}
-                  </label>
+              {/* Grid Compacto de Campos */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {visibleFields.map((field) => {
+                  const isTextArea = field.type === "TEXTAREA";
+                  const isSelect = field.type === "SELECT";
+                  const isCampaign = field.identifier === "campaign_interest";
+                  const isStore = field.identifier === "store_negotiated";
+                  const isSeller = field.identifier === "seller_name";
 
-                  {field.type === "TEXTAREA" ? (
-                    <textarea
-                      rows={3}
-                      value={formValues[field.identifier] || ""}
-                      onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                      placeholder={field.placeholder || ""}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  ) : field.type === "SELECT" ? (
-                    <select
-                      value={formValues[field.identifier] || ""}
-                      onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                  return (
+                    <div 
+                      key={field.id} 
+                      className={`space-y-1 ${isTextArea ? "sm:col-span-2" : ""}`}
                     >
-                      <option value="">Selecione...</option>
-                      {JSON.parse(field.options || "[]").map((opt: string) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type={field.type === "NUMBER" || field.type === "CURRENCY" ? "number" : field.type === "DATE" ? "date" : "text"}
-                      value={formValues[field.identifier] || ""}
-                      onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                      placeholder={field.placeholder || ""}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  )}
-                </div>
-              ))}
+                      <label className="block text-[11px] font-semibold text-slate-700">
+                        {field.label} {field.isRequired && <span className="text-red-500">*</span>}
+                      </label>
+
+                      {isTextArea ? (
+                        <textarea
+                          rows={2}
+                          value={formValues[field.identifier] || ""}
+                          onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
+                          placeholder={field.placeholder || ""}
+                          className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      ) : isCampaign ? (
+                        <select
+                          value={formValues[field.identifier] || ""}
+                          onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
+                          className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                        >
+                          <option value="">Selecione uma campanha...</option>
+                          {campaigns.length > 0
+                            ? campaigns.map((c) => (
+                                <option key={c.id} value={c.name}>
+                                  {c.name}
+                                </option>
+                              ))
+                            : JSON.parse(field.options || "[]").map((opt: string) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              ))}
+                        </select>
+                      ) : isStore ? (
+                        <select
+                          value={formValues[field.identifier] || ""}
+                          onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
+                          className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                        >
+                          <option value="">Selecione a loja de destino...</option>
+                          {stores.length > 0
+                            ? stores.map((s) => (
+                                <option key={s.id} value={s.name}>
+                                  {s.name}
+                                </option>
+                              ))
+                            : JSON.parse(field.options || "[]").map((opt: string) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              ))}
+                        </select>
+                      ) : isSeller ? (
+                        (() => {
+                          const matchedStore = stores.find((s) => s.name === formValues["store_negotiated"]);
+                          const filteredSellers = matchedStore
+                            ? sellers.filter((s) => s.storeId === matchedStore.id)
+                            : sellers;
+                          return (
+                            <select
+                              value={formValues[field.identifier] || ""}
+                              onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                            >
+                              <option value="">Selecione o vendedor / atendente...</option>
+                              {filteredSellers.length > 0
+                                ? filteredSellers.map((sel) => (
+                                    <option key={sel.id} value={sel.name}>
+                                      {sel.name} ({sel.role})
+                                    </option>
+                                  ))
+                                : JSON.parse(field.options || "[]").map((opt: string) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                            </select>
+                          );
+                        })()
+                      ) : isSelect ? (
+                        <select
+                          value={formValues[field.identifier] || ""}
+                          onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
+                          className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                        >
+                          <option value="">Selecione...</option>
+                          {JSON.parse(field.options || "[]").map((opt: string) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type={
+                            field.type === "NUMBER" || field.type === "CURRENCY"
+                              ? "number"
+                              : field.type === "DATE"
+                              ? "date"
+                              : "text"
+                          }
+                          value={formValues[field.identifier] || ""}
+                          onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
+                          placeholder={field.placeholder || ""}
+                          className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 

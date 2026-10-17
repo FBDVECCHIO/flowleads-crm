@@ -201,6 +201,25 @@ export class CardService {
     return this.getCardById(cardId);
   }
 
+  static async updateCardTitle(cardId: string, title: string, userId?: string) {
+    if (!title || typeof title !== "string" || !title.trim()) {
+      throw new Error("Título do card não pode ser vazio.");
+    }
+    await prisma.card.update({
+      where: { id: cardId },
+      data: { title: title.trim() },
+    });
+    await prisma.cardActivity.create({
+      data: {
+        cardId,
+        userId,
+        actionType: "FIELD_UPDATED",
+        details: `Card renomeado para "${title.trim()}".`,
+      },
+    });
+    return this.getCardById(cardId);
+  }
+
   static async updateCardFields(cardId: string, fieldValues: Record<string, string>, userId?: string) {
     const card = await prisma.card.findUnique({ where: { id: cardId } });
     if (!card) throw new Error("Card não encontrado.");
@@ -208,12 +227,48 @@ export class CardService {
     const fields = await prisma.field.findMany({ where: { pipeId: card.pipeId } });
     const fieldMap = new Map(fields.map((f) => [f.identifier, f.id]));
 
+    let newDealValue: number | null = null;
+
     for (const [key, val] of Object.entries(fieldValues)) {
-      const fieldId = fieldMap.get(key) || key;
+      let fieldId = fieldMap.get(key) || key;
+
+      // Auto-create missing field in Pipe if not present
+      if (!fieldMap.has(key)) {
+        try {
+          const newF = await prisma.field.create({
+            data: {
+              pipeId: card.pipeId,
+              identifier: key,
+              label: key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+              type: key.includes("date") ? "DATE" : key.includes("amount") || key.includes("value") ? "CURRENCY" : "TEXT",
+              order: 99,
+            },
+          });
+          fieldId = newF.id;
+          fieldMap.set(key, fieldId);
+        } catch {
+          // ignore if already exists or concurrent
+        }
+      }
+
       await prisma.cardFieldValue.upsert({
         where: { cardId_fieldId: { cardId, fieldId } },
         create: { cardId, fieldId, value: String(val ?? "") },
         update: { value: String(val ?? "") },
+      });
+
+      if (key === "sale_amount" || key === "deal_value" || key === "dealValue") {
+        const parsed = parseFloat(String(val).replace(/[^0-9.-]/g, ""));
+        if (!isNaN(parsed)) {
+          newDealValue = parsed;
+        }
+      }
+    }
+
+    if (newDealValue !== null) {
+      await prisma.card.update({
+        where: { id: cardId },
+        data: { dealValue: newDealValue },
       });
     }
 
@@ -320,4 +375,5 @@ export const updateCardFields = CardService.updateCardFields.bind(CardService);
 export const addComment = CardService.addComment.bind(CardService);
 export const deleteCard = CardService.deleteCard.bind(CardService);
 export const updateCardColor = CardService.updateCardColor.bind(CardService);
+export const updateCardTitle = CardService.updateCardTitle.bind(CardService);
 export const addCardAttachment = CardService.addCardAttachment.bind(CardService);
