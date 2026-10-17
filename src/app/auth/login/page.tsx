@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Layers, ArrowRight, ShieldCheck, UserCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import WireTerrainScan from "@/components/ui/WireTerrainScan";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,8 +43,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 border border-slate-200">
+    <div className="relative min-h-screen w-full flex flex-col justify-center items-center p-4 overflow-hidden bg-black select-none">
+      {/* Fundo Animado Wire Terrain 4 — WebGL */}
+      <div className="absolute inset-0 z-0 pointer-events-auto">
+        <WireTerrainScan />
+      </div>
+
+      {/* Card de Login com Efeito de Vidro e Alta Legibilidade */}
+      <div className="relative z-10 w-full max-w-md bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-white/40 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-blue-500/40">
             F
@@ -68,7 +75,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             />
           </div>
 
@@ -79,14 +86,14 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-md transition-colors flex items-center justify-center gap-2"
+            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {loading ? "Entrando..." : "Acessar Plataforma"}
             <ArrowRight className="w-4 h-4" />
@@ -100,19 +107,19 @@ export default function LoginPage() {
           <div className="grid grid-cols-3 gap-2">
             <button
               onClick={() => quickLogin("admin@flowleads.com", "admin123")}
-              className="px-2 py-1.5 text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 font-medium rounded border border-slate-200 transition-colors"
+              className="px-2 py-1.5 text-xs bg-slate-100/80 hover:bg-blue-50 hover:text-blue-600 font-medium rounded border border-slate-200 transition-colors"
             >
               Admin
             </button>
             <button
               onClick={() => quickLogin("carlos@flowleads.com", "user123")}
-              className="px-2 py-1.5 text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 font-medium rounded border border-slate-200 transition-colors"
+              className="px-2 py-1.5 text-xs bg-slate-100/80 hover:bg-blue-50 hover:text-blue-600 font-medium rounded border border-slate-200 transition-colors"
             >
               Carlos SDR
             </button>
             <button
               onClick={() => quickLogin("mariana@flowleads.com", "user123")}
-              className="px-2 py-1.5 text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 font-medium rounded border border-slate-200 transition-colors"
+              className="px-2 py-1.5 text-xs bg-slate-100/80 hover:bg-blue-50 hover:text-blue-600 font-medium rounded border border-slate-200 transition-colors"
             >
               Mariana Closer
             </button>
