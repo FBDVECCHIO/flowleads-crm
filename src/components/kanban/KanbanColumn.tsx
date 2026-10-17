@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Plus } from "lucide-react";
 import { CardItem } from "./CardItem";
@@ -8,8 +8,12 @@ export interface KanbanColumnProps {
   phase: any;
   phases: any[];
   cards: any[];
-  onOpenCard: (card: any) => void;
+  labels?: any[];
+  onOpenCard: (card: any, tab?: string) => void;
   onMoveCard: (cardId: string, targetPhaseId: string) => void;
+  onColorChange?: (cardId: string, color: string) => void;
+  onDeleteCard?: (cardId: string) => void;
+  onApplyTag?: (cardId: string, labelId: string) => void;
   onQuickAddLead?: (phaseId: string) => void;
 }
 
@@ -17,8 +21,12 @@ export function KanbanColumn({
   phase,
   phases,
   cards,
+  labels,
   onOpenCard,
   onMoveCard,
+  onColorChange,
+  onDeleteCard,
+  onApplyTag,
   onQuickAddLead,
 }: KanbanColumnProps) {
   const phaseCards = cards.filter((c) => c.currentPhaseId === phase.id);
@@ -76,8 +84,12 @@ export function KanbanColumn({
               key={card.id}
               card={card}
               phases={phases}
+              labels={labels}
               onOpenCard={onOpenCard}
               onMoveCard={onMoveCard}
+              onColorChange={onColorChange}
+              onDeleteCard={onDeleteCard}
+              onApplyTag={onApplyTag}
             />
           ))
         ) : (

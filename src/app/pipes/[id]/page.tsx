@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, use } from "react";
 import { AppShell } from "@/components/layout/AppShell";
@@ -17,6 +17,8 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
   const { id: pipeId } = use(params);
   const [pipe, setPipe] = useState<any>(null);
   const [cards, setCards] = useState<any[]>([]);
+  const [labels, setLabels] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"kanban" | "list" | "table">("kanban");
   const [selectedCard, setSelectedCard] = useState<any>(null);
@@ -26,14 +28,21 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
 
   const fetchData = async () => {
     try {
-      const [pRes, cRes] = await Promise.all([
+      const [pRes, cRes, lRes, aRes] = await Promise.all([
         fetch(`/api/pipes/${pipeId}`),
         fetch(`/api/cards?pipeId=${pipeId}`),
+        fetch(`/api/labels?pipeId=${pipeId}`),
+        fetch(`/api/auth/me`),
       ]);
       const pData = await pRes.json();
       const cData = await cRes.json();
+      const lData = lRes.ok ? await lRes.json() : [];
+      const aData = aRes.ok ? await aRes.json() : null;
+
       setPipe(pData);
       setCards(cData);
+      setLabels(Array.isArray(lData) ? lData : []);
+      if (aData?.user) setCurrentUser(aData.user);
     } catch (err) {
       console.error(err);
     } finally {
@@ -45,7 +54,66 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
     fetchData();
   }, [pipeId]);
 
-  const handleOpenCard = async (card: any) => {
+  const handleColorChange = async (cardId: string, color: string) => {
+    try {
+      const res = await fetch(`/api/cards/${cardId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ color }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Erro ao alterar cor do card.");
+        return;
+      }
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteCard = async (cardId: string) => {
+    if (!confirm("Deseja realmente excluir este lead permanentemente?")) return;
+    try {
+      const res = await fetch(`/api/cards/${cardId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Erro ao excluir o card.");
+        return;
+      }
+      if (selectedCard && selectedCard.id === cardId) {
+        setSelectedCard(null);
+      }
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleApplyTag = async (cardId: string, labelId: string) => {
+    try {
+      const res = await fetch(`/api/cards/${cardId}/labels`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ labelId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Erro ao atualizar etiqueta do card.");
+        return;
+      }
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const [drawerTab, setDrawerTab] = useState<"fields" | "checklist" | "activity" | "attachments">("fields");
+
+  const handleOpenCard = async (card: any, tab: "fields" | "checklist" | "activity" | "attachments" = "fields") => {
+    setDrawerTab(tab);
     const res = await fetch(`/api/cards/${card.id}`);
     const full = await res.json();
     setSelectedCard(full);
@@ -141,7 +209,12 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
   }
 
   return (
-    <AppShell pipeId={pipeId} userName="Gestor Comercial">
+    <AppShell
+      pipeId={pipeId}
+      userName={currentUser?.name || "Gestor Comercial"}
+      userRole={currentUser?.role || "ADMIN"}
+      allowedMenus={currentUser?.allowedMenus}
+    >
       <div className="flex flex-col h-[calc(100vh-6.5rem)]">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
           <div>
@@ -254,8 +327,12 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
                   phase={phase}
                   phases={pipe.phases}
                   cards={cards}
+                  labels={labels}
                   onOpenCard={handleOpenCard}
                   onMoveCard={handleMoveCard}
+                  onColorChange={handleColorChange}
+                  onDeleteCard={handleDeleteCard}
+                  onApplyTag={handleApplyTag}
                   onQuickAddLead={() => setIsNewLeadOpen(true)}
                 />
               ))}
@@ -280,6 +357,7 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
             card={selectedCard}
             phases={pipe.phases}
             fields={pipe.fields}
+            defaultTab={drawerTab}
             onClose={() => setSelectedCard(null)}
             onUpdateFields={handleUpdateFields}
             onMovePhase={handleMoveCard}

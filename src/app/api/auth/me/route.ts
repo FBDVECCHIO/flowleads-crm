@@ -33,6 +33,8 @@ export async function GET(req: Request) {
               whatsappNumber: user.whatsappNumber,
               monthlyTargetAmount: user.monthlyTargetAmount,
               monthlyTargetDeals: user.monthlyTargetDeals,
+              workingDaysPerMonth: user.workingDaysPerMonth,
+              allowedMenus: user.allowedMenus,
               allowedDays: user.allowedDays,
               workStartTime: user.workStartTime,
               workEndTime: user.workEndTime,

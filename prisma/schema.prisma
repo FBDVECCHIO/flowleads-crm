@@ -33,6 +33,8 @@ model User {
   whatsappNumber      String?
   monthlyTargetAmount Float?   @default(100000)
   monthlyTargetDeals  Int?     @default(10)
+  workingDaysPerMonth Int?     @default(22)
+  allowedMenus        String?  @default("metas,kanban,reports")
   allowedDays         String?  @default("1,2,3,4,5")
   workStartTime       String?  @default("08:00")
   workEndTime         String?  @default("18:00")

@@ -112,8 +112,14 @@ export async function processMetaLead(
   const targetWhatsapp = overrideData?.destination_whatsapp;
 
   if (targetWhatsapp) {
-    const matchedRep = await prisma.user.findFirst({
-      where: { whatsappNumber: targetWhatsapp },
+    const cleanTarget = targetWhatsapp.replace(/\D/g, "");
+    const allUsers = await prisma.user.findMany({
+      where: { whatsappNumber: { not: null } },
+    });
+    const matchedRep = allUsers.find((u) => {
+      if (!u.whatsappNumber) return false;
+      const cleanU = u.whatsappNumber.replace(/\D/g, "");
+      return cleanU === cleanTarget || cleanU.endsWith(cleanTarget) || cleanTarget.endsWith(cleanU);
     });
     if (matchedRep) {
       assignedToUserId = matchedRep.id;
@@ -146,6 +152,31 @@ export async function processMetaLead(
       createdById: assignedToUserId,
     },
   });
+
+  // Salvar valores dos campos se existirem no pipe (telefone, email, campanha)
+  const pipeFields = await prisma.field.findMany({
+    where: { pipeId: targetPipeId },
+  });
+
+  for (const field of pipeFields) {
+    let valToSet: string | undefined;
+    const ident = field.identifier.toLowerCase();
+    if (ident.includes("phone") || ident.includes("telefone") || ident.includes("whatsapp")) {
+      valToSet = overrideData?.phone || overrideData?.destination_whatsapp;
+    } else if (ident.includes("mail")) {
+      valToSet = overrideData?.email;
+    } else if (ident.includes("campanha") || ident.includes("campaign")) {
+      valToSet = overrideData?.campaign_id;
+    }
+
+    if (valToSet) {
+      await prisma.cardFieldValue.upsert({
+        where: { cardId_fieldId: { cardId: card.id, fieldId: field.id } },
+        create: { cardId: card.id, fieldId: field.id, value: String(valToSet) },
+        update: { value: String(valToSet) },
+      });
+    }
+  }
 
   // Assign user to card
   if (assignedToUserId) {

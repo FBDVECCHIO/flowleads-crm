@@ -11,6 +11,8 @@ export interface SessionUser {
   whatsappNumber?: string | null;
   monthlyTargetAmount?: number | null;
   monthlyTargetDeals?: number | null;
+  workingDaysPerMonth?: number | null;
+  allowedMenus?: string | null;
   allowedDays?: string | null;
   workStartTime?: string | null;
   workEndTime?: string | null;
@@ -228,6 +230,8 @@ export async function authenticateUser(email: string, passwordPlain: string): Pr
     whatsappNumber: user.whatsappNumber,
     monthlyTargetAmount: user.monthlyTargetAmount,
     monthlyTargetDeals: user.monthlyTargetDeals,
+    workingDaysPerMonth: user.workingDaysPerMonth,
+    allowedMenus: user.allowedMenus,
     allowedDays: user.allowedDays,
     workStartTime: user.workStartTime,
     workEndTime: user.workEndTime,
@@ -248,6 +252,8 @@ export async function getDefaultUser(): Promise<SessionUser> {
     whatsappNumber: user.whatsappNumber,
     monthlyTargetAmount: user.monthlyTargetAmount,
     monthlyTargetDeals: user.monthlyTargetDeals,
+    workingDaysPerMonth: user.workingDaysPerMonth,
+    allowedMenus: user.allowedMenus,
     allowedDays: user.allowedDays,
     workStartTime: user.workStartTime,
     workEndTime: user.workEndTime,

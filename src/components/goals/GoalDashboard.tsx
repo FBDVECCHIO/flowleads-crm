@@ -10,11 +10,14 @@ import {
   ArrowRight, 
   TrendingUp, 
   BarChart3, 
-  FileText, 
+  Users, 
   Trophy, 
   Target, 
   CheckCircle2, 
   Clock, 
+  Calendar,
+  Zap,
+  TrendingDown,
   AlertCircle 
 } from "lucide-react";
 
@@ -43,9 +46,18 @@ export function GoalDashboard({
   const rankingPosition = userGoal?.rankingPosition ?? 1;
   const missingAmount = Math.max(0, targetAmount - currentAmount);
 
+  const workingDays = userGoal?.workingDaysPerMonth || 22;
+  const currentWorkingDay = userGoal?.currentWorkingDay || 1;
+  const remainingWorkingDays = userGoal?.remainingWorkingDays || 21;
+  const dailyTargetNormal = userGoal?.dailyTargetNormal || (targetAmount / workingDays);
+  const dailyTargetAccumulated = userGoal?.dailyTargetAccumulated || (remainingWorkingDays > 0 ? missingAmount / remainingWorkingDays : 0);
+  const weeklyTarget = userGoal?.weeklyTarget || (dailyTargetNormal * 5);
+  const pacingPercentage = userGoal?.pacingPercentage || 100;
+  const pacingStatus = userGoal?.pacingStatus || "NO_RITMO";
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
-      {/* 1. Banner de Boas-vindas Personalizado (F5: "Bem-vindo - [Nome]") */}
+      {/* 1. Banner de Boas-vindas Personalizado */}
       <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10 max-w-3xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-semibold backdrop-blur-sm border border-white/20">
@@ -60,7 +72,7 @@ export function GoalDashboard({
           </h1>
 
           <p className="text-blue-100 text-sm leading-relaxed max-w-2xl">
-            Acompanhe suas metas de receita, contratos fechados no ciclo comercial vigente e seu posicionamento na equipe.
+            Acompanhe suas metas de receita, contratos fechados no ciclo comercial vigente, ritmo diário por dias úteis e seu posicionamento na equipe.
           </p>
 
           {/* Ações Rápidas */}
@@ -86,14 +98,15 @@ export function GoalDashboard({
               </Link>
             )}
 
-            <Link
-              href="/public/forms/crm-vendas"
-              target="_blank"
-              className="px-4 py-2.5 bg-blue-900/40 hover:bg-blue-900/70 text-white text-xs font-medium rounded-xl border border-blue-400/20 transition-all flex items-center gap-1.5"
-            >
-              <FileText className="w-3.5 h-3.5 text-blue-300" />
-              <span>Formulário de Entrada</span>
-            </Link>
+            {isSupervisor && (
+              <Link
+                href="/users"
+                className="px-4 py-2.5 bg-blue-900/40 hover:bg-blue-900/70 text-white text-xs font-semibold rounded-xl border border-blue-400/20 transition-all flex items-center gap-2"
+              >
+                <Users className="w-3.5 h-3.5 text-blue-300" />
+                <span>Gestão de Usuários</span>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -101,21 +114,23 @@ export function GoalDashboard({
         <div className="absolute -right-10 -bottom-10 w-64 h-64 rounded-full bg-white/5 pointer-events-none blur-2xl"></div>
       </div>
 
-      {/* 2. Grid de KPIs de Metas */}
+      {/* 2. Grid Principal de KPIs de Metas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Meta Mensal */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-bold uppercase tracking-wider">Meta Mensal</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Meta Mensal Total</span>
             <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
               <Target className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
             <span className="text-2xl font-extrabold text-slate-900">
-              {formatCurrency(userGoal.targetAmount)}
+              {formatCurrency(targetAmount)}
             </span>
-            <p className="text-[11px] text-slate-500 mt-0.5">Estipulado para o mês</p>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              {targetDeals} contratos estipulados
+            </p>
           </div>
         </div>
 
@@ -129,10 +144,10 @@ export function GoalDashboard({
           </div>
           <div className="mt-3">
             <span className="text-2xl font-extrabold text-emerald-600">
-              {formatCurrency(userGoal.currentAmount)}
+              {formatCurrency(currentAmount)}
             </span>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              {userGoal.percentage.toFixed(1)}% atingido
+              {percentage.toFixed(1)}% atingido ({currentDeals} deals)
             </p>
           </div>
         </div>
@@ -140,7 +155,7 @@ export function GoalDashboard({
         {/* Card 3: Faltante */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-bold uppercase tracking-wider">Faltante p/ Meta</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Faltante p/ Cota</span>
             <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
               <Clock className="w-4 h-4" />
             </div>
@@ -150,7 +165,7 @@ export function GoalDashboard({
               {missingAmount > 0 ? formatCurrency(missingAmount) : "Meta Batida! 🎯"}
             </span>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              {missingAmount > 0 ? "Para 100% da cota" : "Superando a meta"}
+              {missingAmount > 0 ? `Para fechar em ${remainingWorkingDays} dias úteis` : "Superando a meta mensal"}
             </p>
           </div>
         </div>
@@ -168,8 +183,96 @@ export function GoalDashboard({
               {rankingPosition}º Lugar
             </span>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              {currentDeals} de {targetDeals} negócios fechados
+              No ranking geral de vendas
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 2.1 Grid Analítico: Metas por Dias Úteis & Ritmo (Pacing) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card A: Meta Diária Normal */}
+        <div className="bg-gradient-to-br from-white to-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Meta Diária Normal</span>
+            <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
+              <Calendar className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2.5">
+            <span className="text-xl font-extrabold text-slate-900">
+              {formatCurrency(dailyTargetNormal)}
+            </span>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Meta ÷ {workingDays} dias úteis
+            </p>
+          </div>
+        </div>
+
+        {/* Card B: Meta Diária Acumulada (Restante) */}
+        <div className="bg-gradient-to-br from-white to-blue-50/30 p-5 rounded-2xl border border-blue-200/70 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-900">Meta Diária Acumulada</span>
+            <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+              <Clock className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2.5">
+            <span className="text-xl font-extrabold text-blue-700">
+              {formatCurrency(dailyTargetAccumulated)}
+            </span>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Faltante ÷ {remainingWorkingDays} dias restantes
+            </p>
+          </div>
+        </div>
+
+        {/* Card C: Meta Semanal */}
+        <div className="bg-gradient-to-br from-white to-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Meta Semanal</span>
+            <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
+              <Target className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2.5">
+            <span className="text-xl font-extrabold text-slate-900">
+              {formatCurrency(weeklyTarget)}
+            </span>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Meta Diária × 5 dias úteis
+            </p>
+          </div>
+        </div>
+
+        {/* Card D: Ritmo de Vendas (Pacing) */}
+        <div className="bg-gradient-to-br from-white to-emerald-50/30 p-5 rounded-2xl border border-emerald-200/70 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-900">Ritmo de Vendas (Pacing)</span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+              <Zap className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2.5 flex items-baseline justify-between">
+            <div>
+              <span className="text-xl font-extrabold text-emerald-700">
+                {pacingPercentage.toFixed(1)}%
+              </span>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                {currentWorkingDay}º dia útil de {workingDays}
+              </p>
+            </div>
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                pacingStatus === "ACIMA"
+                  ? "bg-purple-50 text-purple-700 border-purple-200"
+                  : pacingStatus === "NO_RITMO"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200"
+              }`}
+            >
+              {pacingStatus === "ACIMA" ? "Adiantado" : pacingStatus === "NO_RITMO" ? "No Ritmo" : "Atenção"}
+            </span>
           </div>
         </div>
       </div>
@@ -183,9 +286,17 @@ export function GoalDashboard({
         targetDeals={targetDeals}
         dealsPercentage={dealsPercentage}
         userName={userName}
+        dailyTargetNormal={dailyTargetNormal}
+        dailyTargetAccumulated={dailyTargetAccumulated}
+        weeklyTarget={weeklyTarget}
+        pacingPercentage={pacingPercentage}
+        workingDaysPerMonth={workingDays}
+        currentWorkingDay={currentWorkingDay}
+        remainingWorkingDays={remainingWorkingDays}
+        pacingStatus={pacingStatus}
       />
 
-      {/* 4. Tabela de Ranking da Equipe (Disponível para Supervisor/Admin ou Equipe) */}
+      {/* 4. Tabela de Ranking da Equipe */}
       {teamRanking && teamRanking.length > 0 && (
         <GoalRankingTable
           ranking={teamRanking}

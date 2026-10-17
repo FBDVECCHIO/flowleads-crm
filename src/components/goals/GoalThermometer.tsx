@@ -11,6 +11,14 @@ interface GoalThermometerProps {
   targetDeals: number;
   dealsPercentage: number;
   userName?: string;
+  dailyTargetNormal?: number;
+  dailyTargetAccumulated?: number;
+  weeklyTarget?: number;
+  pacingPercentage?: number;
+  workingDaysPerMonth?: number;
+  currentWorkingDay?: number;
+  remainingWorkingDays?: number;
+  pacingStatus?: "ACIMA" | "NO_RITMO" | "ATRASADO";
 }
 
 export function GoalThermometer({
@@ -21,6 +29,14 @@ export function GoalThermometer({
   targetDeals = 10,
   dealsPercentage = 0,
   userName = "Consultor",
+  dailyTargetNormal = 0,
+  dailyTargetAccumulated = 0,
+  weeklyTarget = 0,
+  pacingPercentage = 100,
+  workingDaysPerMonth = 22,
+  currentWorkingDay = 1,
+  remainingWorkingDays = 21,
+  pacingStatus = "NO_RITMO",
 }: GoalThermometerProps) {
   const safePercentage = isNaN(percentage) ? 0 : percentage;
 
@@ -150,6 +166,49 @@ export function GoalThermometer({
             <span className="text-xs font-semibold text-blue-600">
               {dealsPercentage.toFixed(1)}%
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Pacing e Ritmo de Vendas */}
+      <div className="p-4 rounded-xl bg-gradient-to-r from-slate-50 to-blue-50/40 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-800">Ritmo de Vendas (Pacing)</span>
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                pacingStatus === "ACIMA"
+                  ? "bg-purple-50 text-purple-700 border-purple-200"
+                  : pacingStatus === "NO_RITMO"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200"
+              }`}
+            >
+              {pacingStatus === "ACIMA"
+                ? "Ritmo Acelerado ⚡"
+                : pacingStatus === "NO_RITMO"
+                ? "No Ritmo Comercial 🎯"
+                : "Aceleração Necessária ⚠️"}
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1">
+            Dia útil <span className="font-semibold text-slate-700">{currentWorkingDay}</span> de{" "}
+            <span className="font-semibold text-slate-700">{workingDaysPerMonth}</span> dias no mês ({remainingWorkingDays} restantes).
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+          <div>
+            <span className="text-[10px] text-slate-400 block font-medium">Meta Diária Normal</span>
+            <span className="text-sm font-bold text-slate-800">{formatCurrency(dailyTargetNormal)}</span>
+          </div>
+          <div>
+            <span className="text-[10px] text-slate-400 block font-medium">Meta Diária Restante</span>
+            <span className="text-sm font-bold text-blue-600">{formatCurrency(dailyTargetAccumulated)}</span>
+          </div>
+          <div>
+            <span className="text-[10px] text-slate-400 block font-medium">Meta Semanal</span>
+            <span className="text-sm font-bold text-slate-800">{formatCurrency(weeklyTarget)}</span>
           </div>
         </div>
       </div>

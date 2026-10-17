@@ -1,0 +1,142 @@
+import { prisma } from "../../../lib/prisma.ts";
+import { requireAuth } from "../../../lib/auth.ts";
+import bcrypt from "bcryptjs";
+
+export async function GET(req: Request) {
+  try {
+    const session = await requireAuth(req).catch(() => null);
+    
+    // Check role or header
+    const userRole = req.headers.get("x-user-role") || session?.role || "MEMBER";
+    if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
+      return Response.json(
+        { error: "Acesso restrito para Supervisores e Administradores." },
+        { status: 403 }
+      );
+    }
+
+    const orgId = session?.organizationId || (await prisma.organization.findFirst())?.id;
+    if (!orgId) {
+      return Response.json({ error: "Organização não localizada." }, { status: 404 });
+    }
+
+    const users = await prisma.user.findMany({
+      where: { organizationId: orgId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatarUrl: true,
+        whatsappNumber: true,
+        monthlyTargetAmount: true,
+        monthlyTargetDeals: true,
+        workingDaysPerMonth: true,
+        allowedMenus: true,
+        allowedDays: true,
+        workStartTime: true,
+        workEndTime: true,
+        createdAt: true,
+      },
+      orderBy: [{ role: "asc" }, { name: "asc" }],
+    });
+
+    return Response.json(users);
+  } catch (error: any) {
+    return Response.json({ error: error.message || "Erro ao listar usuários." }, { status: error.status || 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const session = await requireAuth(req).catch(() => null);
+    const userRole = req.headers.get("x-user-role") || session?.role || "MEMBER";
+
+    if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
+      return Response.json(
+        { error: "Apenas Supervisores ou Administradores podem cadastrar novos usuários." },
+        { status: 403 }
+      );
+    }
+
+    const body = await req.json();
+    const {
+      name,
+      email,
+      password,
+      role = "MEMBER",
+      whatsappNumber,
+      monthlyTargetAmount = 100000,
+      monthlyTargetDeals = 10,
+      workingDaysPerMonth = 22,
+      allowedMenus = "metas,kanban,reports",
+      allowedDays = "1,2,3,4,5",
+      workStartTime = "08:00",
+      workEndTime = "18:00",
+    } = body;
+
+    if (!name || typeof name !== "string" || !name.trim()) {
+      return Response.json({ error: "Nome completo é obrigatório." }, { status: 400 });
+    }
+
+    if (!email || typeof email !== "string" || !email.includes("@")) {
+      return Response.json({ error: "E-mail comercial válido é obrigatório." }, { status: 400 });
+    }
+
+    if (!password || typeof password !== "string" || password.length < 6) {
+      return Response.json({ error: "Senha deve conter no mínimo 6 caracteres." }, { status: 400 });
+    }
+
+    // Check if email already exists
+    const existing = await prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() },
+    });
+    if (existing) {
+      return Response.json({ error: "Já existe um usuário cadastrado com este e-mail." }, { status: 409 });
+    }
+
+    const orgId = session?.organizationId || (await prisma.organization.findFirst())?.id;
+    if (!orgId) {
+      return Response.json({ error: "Organização não localizada." }, { status: 404 });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const newUser = await prisma.user.create({
+      data: {
+        organizationId: orgId,
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        passwordHash,
+        role: role.toUpperCase(),
+        whatsappNumber: whatsappNumber ? String(whatsappNumber).trim() : null,
+        monthlyTargetAmount: Number(monthlyTargetAmount) || 100000,
+        monthlyTargetDeals: Number(monthlyTargetDeals) || 10,
+        workingDaysPerMonth: Number(workingDaysPerMonth) || 22,
+        allowedMenus: allowedMenus ? String(allowedMenus).trim() : "metas,kanban,reports",
+        allowedDays: allowedDays ? String(allowedDays).trim() : "1,2,3,4,5",
+        workStartTime: workStartTime || "08:00",
+        workEndTime: workEndTime || "18:00",
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        whatsappNumber: true,
+        monthlyTargetAmount: true,
+        monthlyTargetDeals: true,
+        workingDaysPerMonth: true,
+        allowedMenus: true,
+        allowedDays: true,
+        workStartTime: true,
+        workEndTime: true,
+        createdAt: true,
+      },
+    });
+
+    return Response.json(newUser, { status: 201 });
+  } catch (error: any) {
+    return Response.json({ error: error.message || "Erro ao criar usuário." }, { status: 500 });
+  }
+}

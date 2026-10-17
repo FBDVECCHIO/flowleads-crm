@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { 
   X, 
   CheckSquare, 
@@ -9,7 +9,9 @@ import {
   Send,
   Paperclip,
   FileText,
-  Download
+  Download,
+  Upload,
+  Plus
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -22,6 +24,7 @@ export interface CardDrawerProps {
   onMovePhase: (cardId: string, targetPhaseId: string, fieldValues?: Record<string, string>) => Promise<void>;
   onAddComment: (cardId: string, content: string) => Promise<void>;
   onToggleChecklist: (cardId: string, checklistId: string, itemId: string, completed: boolean) => Promise<void>;
+  defaultTab?: "fields" | "checklist" | "activity" | "attachments";
 }
 
 export function CardDrawer({
@@ -33,8 +36,9 @@ export function CardDrawer({
   onMovePhase,
   onAddComment,
   onToggleChecklist,
+  defaultTab = "fields",
 }: CardDrawerProps) {
-  const [activeTab, setActiveTab] = useState<"fields" | "checklist" | "activity" | "attachments">("fields");
+  const [activeTab, setActiveTab] = useState<"fields" | "checklist" | "activity" | "attachments">(defaultTab || "fields");
   const [formValues, setFormValues] = useState<Record<string, string>>(() => {
     const map: Record<string, string> = {};
     if (card?.values) {
@@ -47,6 +51,56 @@ export function CardDrawer({
   const [newComment, setNewComment] = useState("");
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setErrorMsg(null);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const fileUrl = reader.result as string;
+          const res = await fetch(`/api/cards/${card.id}/attachments`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fileName: file.name,
+              fileUrl,
+              mimeType: file.type || "application/octet-stream",
+              sizeBytes: file.size,
+            }),
+          });
+
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || "Erro ao anexar arquivo.");
+          }
+
+          const newAttachment = await res.json();
+          if (card.attachments) {
+            card.attachments.unshift(newAttachment);
+          } else {
+            card.attachments = [newAttachment];
+          }
+        } catch (err: any) {
+          setErrorMsg(err.message);
+        } finally {
+          setUploading(false);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+      setUploading(false);
+    }
+  };
 
   if (!card) return null;
 
@@ -319,14 +373,39 @@ export function CardDrawer({
           {activeTab === "attachments" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="text-xs font-bold text-slate-700">Documentos e Receitas Médicas</span>
+                <div>
+                  <span className="text-xs font-bold text-slate-800">Documentos e Receitas Médicas</span>
+                  <p className="text-[10px] text-slate-400">Anexe fotos de receitas, contratos ou comprovantes</p>
+                </div>
+
+                <div>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    accept="image/*,application/pdf,.doc,.docx"
+                  />
+                  <button
+                    type="button"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{uploading ? "Enviando..." : "+ Subir Receita / Anexo"}</span>
+                  </button>
+                </div>
               </div>
 
               {(!card.attachments || card.attachments.length === 0) ? (
-                <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-lg text-slate-400 text-xs">
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-8 text-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs hover:border-blue-400 hover:bg-blue-50/20 transition-all cursor-pointer"
+                >
                   <Paperclip className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                  <p>Nenhum anexo ou receita médica vinculada a este card.</p>
-                  <p className="text-[10px] text-slate-400 mt-1">Formatos aceitos: PDF, PNG, JPEG, DOCX (até 10MB)</p>
+                  <p className="font-semibold text-slate-600">Nenhum anexo ou receita médica vinculada a este card.</p>
+                  <p className="text-[10px] text-slate-400 mt-1">Clique para selecionar arquivos (PDF, PNG, JPG, até 10MB)</p>
                 </div>
               ) : (
                 <div className="space-y-2">

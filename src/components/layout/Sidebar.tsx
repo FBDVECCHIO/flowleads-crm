@@ -8,7 +8,7 @@ import {
   TrendingUp, 
   BarChart3, 
   Workflow, 
-  FileText,
+  Users,
   ChevronLeft,
   ChevronRight,
   Layers,
@@ -19,13 +19,15 @@ interface SidebarProps {
   userName?: string;
   userRole?: string;
   orgName?: string;
+  allowedMenus?: string;
 }
 
 export function Sidebar({ 
   pipeId, 
   userName = "Gestor Comercial", 
   userRole = "ADMIN",
-  orgName = "Grupo Mário Neto" 
+  orgName = "Grupo Mário Neto",
+  allowedMenus,
 }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -51,9 +53,10 @@ export function Sidebar({
 
   const currentPipeId = pipeId || "";
 
-  // Menu simplificado conforme R1 e R2 (Database de Clientes oculto)
+  // Itens de navegação oficial do FlowLeads by Grupo Mário Neto
   const navItems = [
     {
+      key: "metas",
       label: "Gestão de Metas",
       icon: Target,
       href: `/`,
@@ -61,6 +64,7 @@ export function Sidebar({
       roles: ["ADMIN", "SUPERVISOR", "MEMBER", "VIEWER"],
     },
     {
+      key: "kanban",
       label: "Kanban de Leads",
       icon: TrendingUp,
       href: currentPipeId ? `/pipes/${currentPipeId}` : `/`,
@@ -68,6 +72,7 @@ export function Sidebar({
       roles: ["ADMIN", "SUPERVISOR", "MEMBER", "VIEWER"],
     },
     {
+      key: "reports",
       label: "Relatórios & Funil",
       icon: BarChart3,
       href: currentPipeId ? `/pipes/${currentPipeId}/reports` : `/`,
@@ -75,6 +80,7 @@ export function Sidebar({
       roles: ["ADMIN", "SUPERVISOR", "MEMBER", "VIEWER"],
     },
     {
+      key: "automations",
       label: "Automações No-Code",
       icon: Workflow,
       href: currentPipeId ? `/pipes/${currentPipeId}/automations` : `/`,
@@ -82,16 +88,23 @@ export function Sidebar({
       roles: ["ADMIN", "SUPERVISOR"],
     },
     {
-      label: "Formulário de Captura",
-      icon: FileText,
-      href: `/public/forms/crm-vendas`,
-      external: true,
-      active: false,
-      roles: ["ADMIN", "SUPERVISOR", "MEMBER"],
+      key: "users",
+      label: "Gestão de Usuários",
+      icon: Users,
+      href: `/users`,
+      active: pathname.startsWith("/users"),
+      roles: ["ADMIN", "SUPERVISOR"],
     },
   ];
 
-  const visibleNavItems = navItems.filter(item => item.roles.includes(userRole));
+  const visibleNavItems = navItems.filter((item) => {
+    if (!item.roles.includes(userRole)) return false;
+    if (userRole === "MEMBER" && allowedMenus) {
+      const allowedList = allowedMenus.split(",").map((s) => s.trim().toLowerCase());
+      return allowedList.includes(item.key);
+    }
+    return true;
+  });
 
   return (
     <aside 

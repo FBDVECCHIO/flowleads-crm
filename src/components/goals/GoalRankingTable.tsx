@@ -40,10 +40,12 @@ export function GoalRankingTable({ ranking = [], currentUserId }: GoalRankingTab
               <th className="py-3.5 px-4 w-16 text-center">Posição</th>
               <th className="py-3.5 px-4">Vendedor / Consultor</th>
               <th className="py-3.5 px-4">WhatsApp Comercial</th>
-              <th className="py-3.5 px-4 text-right">Meta (R$)</th>
+              <th className="py-3.5 px-4 text-right">Meta Mensal</th>
+              <th className="py-3.5 px-4 text-right">Meta Diária</th>
               <th className="py-3.5 px-4 text-right">Realizado (R$)</th>
               <th className="py-3.5 px-4 text-center">Deals</th>
               <th className="py-3.5 px-4 text-right">Atingimento</th>
+              <th className="py-3.5 px-4 text-center">Ritmo (Pacing)</th>
               <th className="py-3.5 px-4 text-center">Status</th>
             </tr>
           </thead>
@@ -122,9 +124,14 @@ export function GoalRankingTable({ ranking = [], currentUserId }: GoalRankingTab
                     )}
                   </td>
 
-                  {/* Meta (R$) */}
+                  {/* Meta Mensal (R$) */}
                   <td className="py-4 px-4 text-right font-medium text-slate-600">
                     {formatCurrency(rep.targetAmount)}
+                  </td>
+
+                  {/* Meta Diária (R$) */}
+                  <td className="py-4 px-4 text-right font-semibold text-blue-600">
+                    {formatCurrency(rep.dailyTargetNormal || (rep.targetAmount / (rep.workingDaysPerMonth || 22)))}
                   </td>
 
                   {/* Realizado (R$) */}
@@ -153,6 +160,21 @@ export function GoalRankingTable({ ranking = [], currentUserId }: GoalRankingTab
                       }`}
                     >
                       {rep.percentage.toFixed(1)}%
+                    </span>
+                  </td>
+
+                  {/* Ritmo (Pacing) */}
+                  <td className="py-4 px-4 text-center">
+                    <span
+                      className={`font-bold text-xs px-2 py-0.5 rounded-full border ${
+                        rep.pacingStatus === "ACIMA"
+                          ? "bg-purple-50 text-purple-700 border-purple-200"
+                          : rep.pacingStatus === "NO_RITMO"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                      }`}
+                    >
+                      {(rep.pacingPercentage || 100).toFixed(0)}%
                     </span>
                   </td>
 
