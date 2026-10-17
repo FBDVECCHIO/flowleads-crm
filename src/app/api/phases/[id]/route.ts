@@ -1,7 +1,13 @@
-﻿import { PipeService } from "@/services/pipeService";
+import { PipeService } from "@/services/pipeService";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+const noStoreHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  "Pragma": "no-cache",
+  "Expires": "0",
+};
 
 export async function PATCH(
   req: Request,
@@ -17,14 +23,22 @@ export async function PATCH(
     });
 
     return Response.json(phase, {
-      headers: { "Cache-Control": "no-store" },
+      status: 200,
+      headers: noStoreHeaders,
     });
   } catch (error: any) {
     return Response.json(
       { error: error.message },
-      { status: error.message?.includes("imutável") ? 403 : 400, headers: { "Cache-Control": "no-store" } }
+      { status: error.message?.includes("imutável") ? 403 : 400, headers: noStoreHeaders }
     );
   }
+}
+
+export async function PUT(
+  req: Request,
+  props: { params: Promise<{ id: string }> }
+) {
+  return PATCH(req, props);
 }
 
 export async function DELETE(
@@ -37,12 +51,12 @@ export async function DELETE(
 
     return Response.json(
       { success: true, message: "Fase excluída e leads migrados com sucesso." },
-      { headers: { "Cache-Control": "no-store" } }
+      { status: 200, headers: noStoreHeaders }
     );
   } catch (error: any) {
     return Response.json(
       { error: error.message },
-      { status: error.message?.includes("imutável") ? 403 : 400, headers: { "Cache-Control": "no-store" } }
+      { status: error.message?.includes("imutável") ? 403 : 400, headers: noStoreHeaders }
     );
   }
 }

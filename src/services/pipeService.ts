@@ -137,6 +137,97 @@ export class PipeService {
 
     return prisma.phase.delete({ where: { id: phaseId } });
   }
+
+  static async reorderPhases(pipeId: string, orderedPhaseIds: string[]) {
+    const allPhases = await prisma.phase.findMany({
+      where: { pipeId },
+      orderBy: { order: "asc" },
+    });
+
+    if (allPhases.length <= 1) return allPhases;
+
+    const firstPhase = allPhases.find((p) => p.order === 1) || allPhases[0];
+    const lostPhase = allPhases.find((p) => p.isFinalLost) || allPhases[allPhases.length - 1];
+    const wonPhase = allPhases.find((p) => p.isFinalWon && p.id !== lostPhase.id) || allPhases[allPhases.length - 2];
+
+    // Filter out immutable anchor phases from reorderable list
+    const anchorIds = new Set([firstPhase.id, wonPhase?.id, lostPhase.id]);
+    const requestedIntermediates = orderedPhaseIds.filter((id) => !anchorIds.has(id));
+    const existingIntermediates = allPhases.filter((p) => !anchorIds.has(p.id));
+
+    // Ensure all existing intermediates are present
+    const validIntermediateIds = requestedIntermediates.filter((id) =>
+      existingIntermediates.some((p) => p.id === id)
+    );
+    for (const ep of existingIntermediates) {
+      if (!validIntermediateIds.includes(ep.id)) {
+        validIntermediateIds.push(ep.id);
+      }
+    }
+
+    // Build the final strict order:
+    // 1. firstPhase (NOVOS LEADS)
+    // 2..N-2. validIntermediateIds
+    // N-1. wonPhase (FECHADO)
+    // N. lostPhase (PERDIDO)
+    const finalSequence = [
+      firstPhase.id,
+      ...validIntermediateIds,
+      ...(wonPhase && wonPhase.id !== firstPhase.id ? [wonPhase.id] : []),
+      ...(lostPhase && lostPhase.id !== firstPhase.id && lostPhase.id !== wonPhase?.id ? [lostPhase.id] : []),
+    ];
+
+    // Use transaction to update orders
+    await prisma.$transaction(
+      finalSequence.map((id, index) =>
+        prisma.phase.update({
+          where: { id },
+          data: { order: index + 1 },
+        })
+      )
+    );
+
+    return prisma.phase.findMany({
+      where: { pipeId },
+      orderBy: { order: "asc" },
+    });
+  }
+
+  static async movePhaseDirection(pipeId: string, phaseId: string, direction: "left" | "right") {
+    const allPhases = await prisma.phase.findMany({
+      where: { pipeId },
+      orderBy: { order: "asc" },
+    });
+
+    const targetPhase = allPhases.find((p) => p.id === phaseId);
+    if (!targetPhase) throw new Error("Fase não encontrada.");
+
+    if (isImmutablePhase(targetPhase)) {
+      throw new Error("Colunas padrão do sistema (Novos Leads, Fechado e Perdido) não podem ser movidas.");
+    }
+
+    const firstPhase = allPhases.find((p) => p.order === 1) || allPhases[0];
+    const lostPhase = allPhases.find((p) => p.isFinalLost) || allPhases[allPhases.length - 1];
+    const wonPhase = allPhases.find((p) => p.isFinalWon && p.id !== lostPhase.id) || allPhases[allPhases.length - 2];
+
+    const anchorIds = new Set([firstPhase.id, wonPhase?.id, lostPhase.id]);
+    const intermediatePhases = allPhases.filter((p) => !anchorIds.has(p.id));
+
+    const currentIndex = intermediatePhases.findIndex((p) => p.id === phaseId);
+    if (currentIndex === -1) throw new Error("Coluna não é reordenável.");
+
+    const newIndex = direction === "left" ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= intermediatePhases.length) {
+      // Cannot move further left or right
+      return allPhases;
+    }
+
+    const reordered = [...intermediatePhases];
+    const [moved] = reordered.splice(currentIndex, 1);
+    reordered.splice(newIndex, 0, moved);
+
+    return this.reorderPhases(pipeId, reordered.map((p) => p.id));
+  }
 }
 
 export function isImmutablePhase(phase: { name?: string; order?: number; isFinalWon?: boolean; isFinalLost?: boolean }): boolean {

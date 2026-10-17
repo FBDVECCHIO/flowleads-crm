@@ -25,7 +25,8 @@ import {
   Phone,
   Layers,
   Sparkles,
-  Info
+  Info,
+  CheckSquare
 } from "lucide-react";
 
 interface StoreItem {
@@ -77,6 +78,15 @@ interface MessageItem {
   createdAt: string;
 }
 
+interface ChecklistItemModel {
+  id: string;
+  title: string;
+  description?: string | null;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
 const PRODUCT_OPTIONS = [
   { id: "armação", label: "Armação" },
   { id: "lente", label: "Lente" },
@@ -99,7 +109,7 @@ const PRESET_COLORS = [
 export default function CadastrosPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [defaultPipeId, setDefaultPipeId] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"lojas" | "vendedores" | "campanhas" | "tags" | "mensagens">("lojas");
+  const [activeTab, setActiveTab] = useState<"lojas" | "vendedores" | "campanhas" | "tags" | "mensagens" | "checklist">("lojas");
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -109,13 +119,14 @@ export default function CadastrosPage() {
   const [campaigns, setCampaigns] = useState<CampaignItem[]>([]);
   const [labels, setLabels] = useState<LabelItem[]>([]);
   const [messages, setMessages] = useState<MessageItem[]>([]);
+  const [checklistItems, setChecklistItems] = useState<ChecklistItemModel[]>([]);
 
   // Estados de feedback
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Estados dos modais
-  const [modalType, setModalType] = useState<"store" | "seller" | "campaign" | "label" | "message" | null>(null);
+  const [modalType, setModalType] = useState<"store" | "seller" | "campaign" | "label" | "message" | "checklist" | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -134,12 +145,13 @@ export default function CadastrosPage() {
   });
   const [labelForm, setLabelForm] = useState({ name: "", color: "#3b82f6" });
   const [messageForm, setMessageForm] = useState({ title: "", content: "", priority: "NORMAL", authorName: "" });
+  const [checklistForm, setChecklistForm] = useState({ title: "", description: "", order: 1, isActive: true });
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const cacheBust = `?_t=${Date.now()}`;
-      const [authRes, pipesRes, storesRes, sellersRes, campaignsRes, labelsRes, messagesRes] = await Promise.all([
+      const [authRes, pipesRes, storesRes, sellersRes, campaignsRes, labelsRes, messagesRes, checklistsRes] = await Promise.all([
         fetch(`/api/auth/me${cacheBust}`, { cache: "no-store" }),
         fetch(`/api/pipes${cacheBust}`, { cache: "no-store" }),
         fetch(`/api/stores${cacheBust}`, { cache: "no-store" }),
@@ -147,6 +159,7 @@ export default function CadastrosPage() {
         fetch(`/api/campaigns${cacheBust}`, { cache: "no-store" }),
         fetch(`/api/labels${cacheBust}`, { cache: "no-store" }),
         fetch(`/api/messages${cacheBust}`, { cache: "no-store" }),
+        fetch(`/api/checklists${cacheBust}`, { cache: "no-store" }),
       ]);
 
       if (authRes.ok) {
@@ -166,6 +179,7 @@ export default function CadastrosPage() {
       if (campaignsRes.ok) setCampaigns(await campaignsRes.json());
       if (labelsRes.ok) setLabels(await labelsRes.json());
       if (messagesRes.ok) setMessages(await messagesRes.json());
+      if (checklistsRes.ok) setChecklistItems(await checklistsRes.json());
     } catch (err: any) {
       console.error("Erro ao carregar dados da Central de Cadastros:", err);
     } finally {
@@ -507,6 +521,83 @@ export default function CadastrosPage() {
     }
   };
 
+  // --- Handlers: Checklist (Supervisor) ---
+  const handleOpenChecklistModal = (item?: ChecklistItemModel) => {
+    if (item) {
+      setEditingItem(item);
+      setChecklistForm({
+        title: item.title,
+        description: item.description || "",
+        order: item.order || 1,
+        isActive: item.isActive,
+      });
+    } else {
+      setEditingItem(null);
+      setChecklistForm({
+        title: "",
+        description: "",
+        order: checklistItems.length + 1,
+        isActive: true,
+      });
+    }
+    setModalType("checklist");
+  };
+
+  const handleSaveChecklist = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const url = editingItem ? `/api/checklists/${editingItem.id}` : "/api/checklists";
+      const method = editingItem ? "PUT" : "POST";
+      const payload = {
+        ...checklistForm,
+        title: checklistForm.title.trim(),
+        description: checklistForm.description ? checklistForm.description.trim() : "",
+      };
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao salvar item de checklist.");
+      showSuccess(editingItem ? "Item de checklist atualizado!" : "Item de checklist cadastrado com sucesso!");
+      setModalType(null);
+      await fetchData();
+    } catch (err: any) {
+      showError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteChecklist = async (id: string, title: string) => {
+    if (!confirm(`Deseja realmente remover o item de checklist "${title}"?`)) return;
+    try {
+      const res = await fetch(`/api/checklists/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Erro ao remover item de checklist.");
+      showSuccess("Item de checklist removido!");
+      await fetchData();
+    } catch (err: any) {
+      showError(err.message);
+    }
+  };
+
+  const handleToggleChecklistActive = async (item: ChecklistItemModel) => {
+    try {
+      const res = await fetch(`/api/checklists/${item.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !item.isActive }),
+      });
+      if (!res.ok) throw new Error("Erro ao atualizar status.");
+      showSuccess(`Item ${!item.isActive ? "ativado" : "desativado"} com sucesso!`);
+      await fetchData();
+    } catch (err: any) {
+      showError(err.message);
+    }
+  };
+
   return (
     <AppShell
       pipeId={defaultPipeId}
@@ -636,6 +727,21 @@ export default function CadastrosPage() {
               <span>Comunicados (Sino)</span>
               <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
                 {messages.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => { setActiveTab("checklist"); setSearchTerm(""); }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "checklist"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+              }`}
+            >
+              <CheckSquare className="w-4 h-4" />
+              <span>Checklist</span>
+              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+                {checklistItems.length}
               </span>
             </button>
           </div>
@@ -1151,6 +1257,118 @@ export default function CadastrosPage() {
           </div>
         )}
 
+        {/* ABA: CHECKLIST (Configuração dos Itens pelo Supervisor) */}
+        {activeTab === "checklist" && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <CheckSquare className="w-4 h-4 text-blue-600" />
+                  Itens de Checklist dos Cards de Leads
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Cadastre os itens padronizados que a equipe comercial e os vendedores deverão marcar dentro do card de cada lead.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Filtrar itens..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-44"
+                  />
+                </div>
+
+                <button
+                  onClick={() => handleOpenChecklistModal()}
+                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Novo Item de Checklist</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="divide-y divide-slate-100">
+                {checklistItems
+                  .filter((item) => {
+                    const q = searchTerm.toLowerCase();
+                    return item.title.toLowerCase().includes(q) || (item.description && item.description.toLowerCase().includes(q));
+                  })
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-4 flex items-center justify-between gap-4 hover:bg-slate-50/80 transition-colors"
+                    >
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 border border-slate-200">
+                          {item.order}
+                        </span>
+                        <div className="space-y-0.5 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-xs text-slate-900">{item.title}</span>
+                            <button
+                              onClick={() => handleToggleChecklistActive(item)}
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border transition-colors ${
+                                item.isActive
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                  : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
+                              }`}
+                              title="Clique para alternar status ativo/inativo"
+                            >
+                              {item.isActive ? "Ativo no Card" : "Inativo"}
+                            </button>
+                          </div>
+                          {item.description && (
+                            <p className="text-xs text-slate-500 line-clamp-2">{item.description}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => handleOpenChecklistModal(item)}
+                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Editar Item"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteChecklist(item.id, item.title)}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Excluir Item"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                {checklistItems.length === 0 && (
+                  <div className="p-8 text-center space-y-2">
+                    <CheckSquare className="w-8 h-8 text-slate-300 mx-auto" />
+                    <p className="text-xs font-semibold text-slate-600">Nenhum item de checklist cadastrado.</p>
+                    <p className="text-[11px] text-slate-400">
+                      Cadastre os itens que os usuários e vendedores devem verificar em cada lead.
+                    </p>
+                    <button
+                      onClick={() => handleOpenChecklistModal()}
+                      className="mt-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold"
+                    >
+                      + Cadastrar Primeiro Item
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* MODAL: LOJA */}
         {modalType === "store" && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -1640,6 +1858,94 @@ export default function CadastrosPage() {
                     className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md disabled:opacity-50"
                   >
                     {submitting ? "Enviando..." : "Disparar Comunicado"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: ITEM DE CHECKLIST */}
+        {modalType === "checklist" && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">
+                    {editingItem ? "Editar Item de Checklist" : "Novo Item de Checklist do Lead"}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Definido pelo Supervisor para aparecer como opção selecionável no card de lead.
+                  </p>
+                </div>
+                <button onClick={() => setModalType(null)} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveChecklist} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Título / Tarefa de Verificação *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Verificar Receita Oftalmológica Válida"
+                    value={checklistForm.title}
+                    onChange={(e) => setChecklistForm({ ...checklistForm, title: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Descrição / Instruções aos Vendedores</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Ex: Verificar data de emissão médica (máximo 1 ano) e CRM do oftalmologista..."
+                    value={checklistForm.description}
+                    onChange={(e) => setChecklistForm({ ...checklistForm, description: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Ordem de Exibição</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={checklistForm.order}
+                      onChange={(e) => setChecklistForm({ ...checklistForm, order: Number(e.target.value) || 1 })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center pt-5">
+                    <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={checklistForm.isActive}
+                        onChange={(e) => setChecklistForm({ ...checklistForm, isActive: e.target.checked })}
+                        className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                      />
+                      <span>Item Ativo nos Cards</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setModalType(null)}
+                    className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-medium"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md disabled:opacity-50"
+                  >
+                    {submitting ? "Salvando..." : "Salvar Item"}
                   </button>
                 </div>
               </form>

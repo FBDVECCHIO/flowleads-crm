@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Plus, MoreVertical, Edit2, Trash2, Lock } from "lucide-react";
+import { Plus, MoreVertical, Edit2, Trash2, Lock, ArrowLeft, ArrowRight, GripVertical } from "lucide-react";
 import { CardItem } from "./CardItem";
 import { formatCurrency } from "@/lib/utils";
 
@@ -19,6 +19,8 @@ export interface KanbanColumnProps {
   onRenameCard?: (cardId: string, newTitle: string) => void;
   onRenamePhase?: (phaseId: string, currentName: string) => void;
   onDeletePhase?: (phaseId: string, phaseName: string) => void;
+  onMovePhaseDirection?: (phaseId: string, direction: "left" | "right") => void;
+  onReorderPhases?: (phaseIds: string[]) => void;
 }
 
 export function KanbanColumn({
@@ -35,6 +37,8 @@ export function KanbanColumn({
   onRenameCard,
   onRenamePhase,
   onDeletePhase,
+  onMovePhaseDirection,
+  onReorderPhases,
 }: KanbanColumnProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -54,11 +58,22 @@ export function KanbanColumn({
   const phaseCards = cards.filter((c) => c.currentPhaseId === phase.id);
   const totalValue = phaseCards.reduce((acc, c) => acc + (c.dealValue || 0), 0);
 
-  const isImmutable =
-    phase.order === 1 ||
-    phase.isFinalWon ||
-    phase.isFinalLost ||
-    /novo|ganho|fechado|perdido/i.test(phase.name || "");
+  // Governança estrita:
+  // Coluna 1: Novos Leads (imutável)
+  // Penúltima: Fechado (isFinalWon, imutável)
+  // Última: Perdido (isFinalLost, imutável)
+  const isFirst = phase.order === 1 || /novo/i.test(phase.name || "");
+  const isWon = Boolean(phase.isFinalWon || /fechado\s*ganho|^fechado$/i.test(phase.name || ""));
+  const isLost = Boolean(phase.isFinalLost || /fechado\s*perdido|^perdido$/i.test(phase.name || ""));
+  const isImmutable = isFirst || isWon || isLost;
+
+  // Identificar índice e capacidade de movimentação entre as colunas intermediárias
+  const intermediatePhases = phases.filter(
+    (p) => !(p.order === 1 || /novo/i.test(p.name || "") || p.isFinalWon || p.isFinalLost || /fechado|perdido/i.test(p.name || ""))
+  );
+  const intermediateIndex = intermediatePhases.findIndex((p) => p.id === phase.id);
+  const canMoveLeft = !isImmutable && intermediateIndex > 0;
+  const canMoveRight = !isImmutable && intermediateIndex >= 0 && intermediateIndex < intermediatePhases.length - 1;
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -67,34 +82,93 @@ export function KanbanColumn({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     try {
-      const data = JSON.parse(e.dataTransfer.getData("text/plain"));
-      if (data.cardId && data.sourcePhaseId !== phase.id) {
-        onMoveCard(data.cardId, phase.id);
+      const phaseDragId = e.dataTransfer.getData("application/phase-id");
+      if (phaseDragId && phaseDragId !== phase.id && !isImmutable && onReorderPhases) {
+        const allIds = phases.map((p) => p.id);
+        const fromIdx = allIds.indexOf(phaseDragId);
+        const toIdx = allIds.indexOf(phase.id);
+        if (fromIdx !== -1 && toIdx !== -1) {
+          const reordered = [...allIds];
+          const [moved] = reordered.splice(fromIdx, 1);
+          reordered.splice(toIdx, 0, moved);
+          onReorderPhases(reordered);
+          return;
+        }
+      }
+
+      const textData = e.dataTransfer.getData("text/plain");
+      if (textData) {
+        const data = JSON.parse(textData);
+        if (data.cardId && data.sourcePhaseId !== phase.id) {
+          onMoveCard(data.cardId, phase.id);
+        }
       }
     } catch (err) {}
+  };
+
+  const handleColumnDragStart = (e: React.DragEvent) => {
+    if (isImmutable) {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer.setData("application/phase-id", phase.id);
   };
 
   return (
     <div
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className="w-80 shrink-0 bg-slate-100/90 rounded-xl flex flex-col max-h-[calc(100vh-10rem)] border border-slate-200/80 shadow-sm"
+      className="w-80 shrink-0 bg-slate-100/90 rounded-xl flex flex-col max-h-[calc(100vh-10rem)] border border-slate-200/80 shadow-sm transition-all"
     >
-      <div className="p-3 border-b border-slate-200 flex items-center justify-between relative">
-        <div className="flex items-center gap-2">
+      {/* Cabeçalho da Coluna com Governança e Ações de Movimentação */}
+      <div
+        draggable={!isImmutable}
+        onDragStart={handleColumnDragStart}
+        className={`p-3 border-b border-slate-200 flex items-center justify-between relative ${
+          !isImmutable ? "cursor-grab active:cursor-grabbing" : ""
+        }`}
+      >
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {!isImmutable && (
+            <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0 hover:text-slate-700" title="Arraste para reposicionar a coluna" />
+          )}
           <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: phase.color }} />
           <h3 className="text-xs font-bold text-slate-900 tracking-tight uppercase truncate" title={phase.name}>
             {phase.name}
           </h3>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 shrink-0">
             {phaseCards.length}
           </span>
           {isImmutable && (
-            <Lock className="w-3 h-3 text-slate-400 shrink-0" title="Coluna padrão do sistema (imutável)" />
+            <Lock className="w-3 h-3 text-slate-400 shrink-0" title="Coluna padrão do sistema (posição imutável)" />
           )}
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0 ml-1">
+          {/* Botões de Mover Coluna para Esquerda / Direita */}
+          {!isImmutable && onMovePhaseDirection && (
+            <div className="flex items-center bg-slate-200/60 rounded-md p-0.5">
+              <button
+                type="button"
+                disabled={!canMoveLeft}
+                onClick={() => onMovePhaseDirection(phase.id, "left")}
+                className="p-1 rounded text-slate-500 hover:text-blue-700 hover:bg-white disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-slate-500 transition-colors"
+                title="Mover coluna para a esquerda"
+              >
+                <ArrowLeft className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                disabled={!canMoveRight}
+                onClick={() => onMovePhaseDirection(phase.id, "right")}
+                className="p-1 rounded text-slate-500 hover:text-blue-700 hover:bg-white disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-slate-500 transition-colors"
+                title="Mover coluna para a direita"
+              >
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+
           {onQuickAddLead && (
             <button
               onClick={() => onQuickAddLead(phase.id)}
@@ -105,7 +179,7 @@ export function KanbanColumn({
             </button>
           )}
 
-          {!isImmutable && (onRenamePhase || onDeletePhase) && (
+          {!isImmutable && (onRenamePhase || onDeletePhase || onMovePhaseDirection) && (
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -116,7 +190,31 @@ export function KanbanColumn({
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 top-7 w-44 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-30 text-xs">
+                <div className="absolute right-0 top-7 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-30 text-xs">
+                  {onMovePhaseDirection && canMoveLeft && (
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onMovePhaseDirection(phase.id, "left");
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Mover para Esquerda</span>
+                    </button>
+                  )}
+                  {onMovePhaseDirection && canMoveRight && (
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onMovePhaseDirection(phase.id, "right");
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                    >
+                      <ArrowRight className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Mover para Direita</span>
+                    </button>
+                  )}
                   {onRenamePhase && (
                     <button
                       onClick={() => {
@@ -148,13 +246,12 @@ export function KanbanColumn({
         </div>
       </div>
 
-
       <div className="px-3 py-1.5 bg-slate-50 text-[11px] text-slate-500 flex items-center justify-between border-b border-slate-100 font-medium">
         <span>Total da Fase:</span>
         <span className="font-semibold text-slate-700">{formatCurrency(totalValue)}</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 min-h-[150px]">
+      <div className="flex-1 overflow-y-auto p-2.5 space-y-2 min-h-[150px]">
         {phaseCards.length > 0 ? (
           phaseCards.map((card) => (
             <CardItem
@@ -171,8 +268,16 @@ export function KanbanColumn({
             />
           ))
         ) : (
-          <div className="h-24 border-2 border-dashed border-slate-200 rounded-lg flex items-center justify-center text-[11px] text-slate-400">
-            Nenhum lead nesta fase
+          <div className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-slate-200/80 rounded-lg text-slate-400 text-xs">
+            <span>Nenhum lead nesta fase</span>
+            {onQuickAddLead && (
+              <button
+                onClick={() => onQuickAddLead(phase.id)}
+                className="mt-2 text-blue-600 hover:underline font-semibold text-[11px]"
+              >
+                + Adicionar Lead
+              </button>
+            )}
           </div>
         )}
       </div>

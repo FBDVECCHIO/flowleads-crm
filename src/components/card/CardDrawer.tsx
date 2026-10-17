@@ -63,6 +63,8 @@ export function CardDrawer({
   const [stores, setStores] = useState<any[]>([]);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [sellers, setSellers] = useState<any[]>([]);
+  const [standardChecklists, setStandardChecklists] = useState<any[]>([]);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -71,17 +73,20 @@ export function CardDrawer({
 
   useEffect(() => {
     setCurrentTitle(card?.title || "");
-    // Carregar Lojas, Campanhas e Vendedores para crosscheck nos selects
+    // Carregar Lojas, Campanhas, Vendedores e Checklist Padrão
     const loadCrosscheckData = async () => {
       try {
-        const [sRes, cRes, selRes] = await Promise.all([
-          fetch("/api/stores"),
-          fetch("/api/campaigns"),
-          fetch("/api/sellers"),
+        const t = Date.now();
+        const [sRes, cRes, selRes, chkRes] = await Promise.all([
+          fetch(`/api/stores?_t=${t}`, { cache: "no-store" }),
+          fetch(`/api/campaigns?_t=${t}`, { cache: "no-store" }),
+          fetch(`/api/sellers?_t=${t}`, { cache: "no-store" }),
+          fetch(`/api/checklists?_t=${t}`, { cache: "no-store" }),
         ]);
         if (sRes.ok) setStores(await sRes.json());
         if (cRes.ok) setCampaigns(await cRes.json());
         if (selRes.ok) setSellers(await selRes.json());
+        if (chkRes.ok) setStandardChecklists(await chkRes.json());
       } catch (err) {
         // Fallback gracioso
       }
@@ -177,8 +182,11 @@ export function CardDrawer({
   const handleSaveFields = async () => {
     setSaving(true);
     setErrorMsg(null);
+    setSaveSuccess(false);
     try {
       await onUpdateFields(card.id, formValues);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: any) {
       setErrorMsg(err.message);
     } finally {
@@ -554,37 +562,129 @@ export function CardDrawer({
                   });
                 })()}
               </div>
+
+              {/* Botão de salvar alterações nos campos do lead */}
+              <div className="pt-4 border-t border-slate-200 flex items-center justify-between gap-2 bg-slate-50 p-3 rounded-xl mt-4">
+                <div className="flex items-center gap-1.5 text-slate-500 text-xs">
+                  {saveSuccess ? (
+                    <span className="text-emerald-700 font-bold flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      <Check className="w-3.5 h-3.5" />
+                      Alterações salvas com sucesso!
+                    </span>
+                  ) : (
+                    <span>Clique para salvar todas as alterações realizadas no lead.</span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={handleSaveFields}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50 shrink-0"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>{saving ? "Salvando..." : "Salvar Dados do Lead"}</span>
+                </button>
+              </div>
             </div>
           )}
 
           {activeTab === "checklist" && (
-            <div className="space-y-3">
-              <span className="text-xs font-bold text-slate-700 block mb-2">Checklists da Fase</span>
-              {card.checklists && card.checklists.length > 0 ? (
-                card.checklists.map((cl: any) => {
-                  const items: any[] = JSON.parse(cl.items || "[]");
-                  return (
-                    <div key={cl.id} className="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-2">
-                      <span className="text-xs font-bold text-slate-800">{cl.title}</span>
-                      <div className="space-y-1.5">
-                        {items.map((it) => (
-                          <label key={it.id} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div>
+                  <span className="text-xs font-bold text-slate-800">Checklist Padrão do Lead</span>
+                  <p className="text-[10px] text-slate-400">
+                    Itens cadastrados pelo Supervisor na Central de Cadastros para conformidade do atendimento.
+                  </p>
+                </div>
+              </div>
+
+              {(() => {
+                let cardItems: any[] = [];
+                const checklistId = card.checklists?.[0]?.id || "";
+                if (card.checklists && card.checklists.length > 0) {
+                  try {
+                    cardItems = JSON.parse(card.checklists[0].items || "[]");
+                  } catch {}
+                }
+
+                // Unir com checklist padrão do Supervisor
+                const allItems = standardChecklists.length > 0
+                  ? standardChecklists.map((sc) => {
+                      const matched = cardItems.find((ci) => ci.id === sc.id || ci.text === sc.title);
+                      return {
+                        id: sc.id,
+                        title: sc.title,
+                        description: sc.description,
+                        completed: Boolean(matched?.completed),
+                      };
+                    })
+                  : cardItems.map((ci) => ({
+                      id: ci.id,
+                      title: ci.text,
+                      description: null,
+                      completed: Boolean(ci.completed),
+                    }));
+
+                const doneCount = allItems.filter((i) => i.completed).length;
+
+                return (
+                  <div className="space-y-3">
+                    {allItems.length > 0 && (
+                      <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-700">Progresso do Checklist:</span>
+                        <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                          {doneCount}/{allItems.length} concluídos ({Math.round((doneCount / allItems.length) * 100)}%)
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      {allItems.length > 0 ? (
+                        allItems.map((it) => (
+                          <label
+                            key={it.id}
+                            className={`p-3 rounded-lg border transition-all flex items-start gap-3 cursor-pointer ${
+                              it.completed
+                                ? "bg-emerald-50/40 border-emerald-200 text-slate-500"
+                                : "bg-white border-slate-200 hover:border-blue-300 text-slate-800"
+                            }`}
+                          >
                             <input
                               type="checkbox"
                               checked={Boolean(it.completed)}
-                              onChange={(e) => onToggleChecklist(card.id, cl.id, it.id, e.target.checked)}
-                              className="rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                              onChange={(e) => onToggleChecklist(card.id, checklistId, it.id, e.target.checked)}
+                              className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
                             />
-                            <span className={it.completed ? "line-through text-slate-400" : ""}>{it.text}</span>
+                            <div className="space-y-0.5 flex-1">
+                              <span className={`text-xs font-semibold block ${it.completed ? "line-through text-slate-400" : "text-slate-800"}`}>
+                                {it.title}
+                              </span>
+                              {it.description && (
+                                <p className="text-[11px] text-slate-400">{it.description}</p>
+                              )}
+                            </div>
+                            {it.completed && (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded shrink-0">
+                                Concluído
+                              </span>
+                            )}
                           </label>
-                        ))}
-                      </div>
+                        ))
+                      ) : (
+                        <div className="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs">
+                          <CheckSquare className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                          <p className="font-semibold text-slate-600">Nenhum item de checklist configurado.</p>
+                          <p className="text-[10px] text-slate-400 mt-1">
+                            Acesse a Central de Cadastros para cadastrar itens padrão de checklist pelo Supervisor.
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  );
-                })
-              ) : (
-                <p className="text-xs text-slate-400">Nenhum checklist configurado.</p>
-              )}
+                  </div>
+                );
+              })()}
             </div>
           )}
 

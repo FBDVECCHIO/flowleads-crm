@@ -299,6 +299,41 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
     }
   };
 
+  const handleMovePhaseDirection = async (phaseId: string, direction: "left" | "right") => {
+    try {
+      const res = await fetch(`/api/phases/reorder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pipeId, phaseId, direction }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || "Erro ao movimentar coluna.");
+        return;
+      }
+      await fetchData();
+    } catch (err) {
+      console.error("Erro ao movimentar coluna:", err);
+    }
+  };
+
+  const handleReorderPhases = async (phaseIds: string[]) => {
+    try {
+      const res = await fetch(`/api/phases/reorder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pipeId, phaseIds }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || "Erro ao reordenar colunas.");
+        return;
+      }
+      await fetchData();
+    } catch (err) {
+      console.error("Erro ao reordenar colunas:", err);
+    }
+  };
 
   const handleUpdateFields = async (cardId: string, fieldValues: Record<string, string>) => {
     const res = await fetch(`/api/cards/${cardId}`, {
@@ -696,6 +731,8 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
                   onRenameCard={handleRenameCard}
                   onRenamePhase={handleRenamePhase}
                   onDeletePhase={handleDeletePhase}
+                  onMovePhaseDirection={handleMovePhaseDirection}
+                  onReorderPhases={handleReorderPhases}
                 />
               ))}
 

@@ -22,6 +22,7 @@ export class CardService {
       where,
       include: {
         currentPhase: true,
+        creator: { select: { id: true, name: true, email: true, whatsappNumber: true } },
         assignees: { include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } } },
         labels: { include: { label: true } },
         values: { include: { field: true } },
@@ -40,6 +41,7 @@ export class CardService {
       where: { id: cardId },
       include: {
         currentPhase: true,
+        creator: { select: { id: true, name: true, email: true, whatsappNumber: true } },
         pipe: {
           include: {
             phases: { orderBy: { order: "asc" } },
@@ -83,6 +85,38 @@ export class CardService {
         phaseEnteredAt: new Date(),
       },
     });
+
+    if (input.createdById) {
+      await prisma.cardAssignee.upsert({
+        where: { cardId_userId: { cardId: card.id, userId: input.createdById } },
+        create: { cardId: card.id, userId: input.createdById },
+        update: {},
+      }).catch(() => {});
+    }
+
+    // Auto-vincular checklist padrão cadastrado pelo Supervisor
+    const org = await prisma.organization.findFirst();
+    if (org) {
+      const standardItems = await prisma.checklistItem.findMany({
+        where: { organizationId: org.id, isActive: true },
+        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+      });
+      if (standardItems.length > 0) {
+        await prisma.cardChecklist.create({
+          data: {
+            cardId: card.id,
+            title: "Checklist do Lead",
+            items: JSON.stringify(
+              standardItems.map((si) => ({
+                id: si.id,
+                text: si.title,
+                completed: false,
+              }))
+            ),
+          },
+        }).catch(() => {});
+      }
+    }
 
     // Se houver valores de campos iniciais (Start Form)
     if (input.fieldValues && Object.keys(input.fieldValues).length > 0) {
@@ -312,10 +346,17 @@ export class CardService {
       }
     }
 
+    const cardUpdates: any = {};
     if (newDealValue !== null) {
+      cardUpdates.dealValue = newDealValue;
+    }
+    if (fieldValues.lead_name && fieldValues.lead_name.trim()) {
+      cardUpdates.title = fieldValues.lead_name.trim().toUpperCase();
+    }
+    if (Object.keys(cardUpdates).length > 0) {
       await prisma.card.update({
         where: { id: cardId },
-        data: { dealValue: newDealValue },
+        data: cardUpdates,
       });
     }
 

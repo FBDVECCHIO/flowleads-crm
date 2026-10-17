@@ -2,6 +2,15 @@ import { prisma } from "../../../../lib/prisma.ts";
 import { requireAuth } from "../../../../lib/auth.ts";
 import bcrypt from "bcryptjs";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const noStoreHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  "Pragma": "no-cache",
+  "Expires": "0",
+};
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> | { id: string } }
@@ -12,7 +21,7 @@ export async function GET(
     const userRole = req.headers.get("x-user-role") || session?.role || "MEMBER";
 
     if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
-      return Response.json({ error: "Acesso restrito a Supervisores." }, { status: 403 });
+      return Response.json({ error: "Acesso restrito a Supervisores." }, { status: 403, headers: noStoreHeaders });
     }
 
     const user = await prisma.user.findUnique({
@@ -35,12 +44,12 @@ export async function GET(
     });
 
     if (!user) {
-      return Response.json({ error: "Usuário não encontrado." }, { status: 404 });
+      return Response.json({ error: "Usuário não encontrado." }, { status: 404, headers: noStoreHeaders });
     }
 
-    return Response.json(user);
+    return Response.json(user, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });
   }
 }
 
@@ -54,7 +63,7 @@ export async function PATCH(
     const userRole = req.headers.get("x-user-role") || session?.role || "MEMBER";
 
     if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
-      return Response.json({ error: "Acesso restrito a Supervisores." }, { status: 403 });
+      return Response.json({ error: "Acesso restrito a Supervisores." }, { status: 403, headers: noStoreHeaders });
     }
 
     const body = await req.json();
@@ -96,9 +105,9 @@ export async function PATCH(
       },
     });
 
-    return Response.json(updatedUser);
+    return Response.json(updatedUser, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message || "Erro ao atualizar usuário." }, { status: 500 });
+    return Response.json({ error: error.message || "Erro ao atualizar usuário." }, { status: 500, headers: noStoreHeaders });
   }
 }
 
@@ -120,19 +129,19 @@ export async function DELETE(
     const currentUserId = req.headers.get("x-user-id") || session?.userId;
 
     if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
-      return Response.json({ error: "Acesso restrito a Supervisores." }, { status: 403 });
+      return Response.json({ error: "Acesso restrito a Supervisores." }, { status: 403, headers: noStoreHeaders });
     }
 
     if (currentUserId && currentUserId === resolvedParams.id) {
-      return Response.json({ error: "Não é permitido excluir o próprio usuário logado." }, { status: 400 });
+      return Response.json({ error: "Não é permitido excluir o próprio usuário logado." }, { status: 400, headers: noStoreHeaders });
     }
 
     await prisma.user.delete({
       where: { id: resolvedParams.id },
     });
 
-    return Response.json({ success: true, message: "Usuário excluído com sucesso." });
+    return Response.json({ success: true, message: "Usuário excluído com sucesso." }, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message || "Erro ao excluir usuário." }, { status: 500 });
+    return Response.json({ error: error.message || "Erro ao excluir usuário." }, { status: 500, headers: noStoreHeaders });
   }
 }

@@ -1,4 +1,5 @@
 import { CardService } from "../../../services/cardService.ts";
+import { requireAuth } from "../../../lib/auth.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -31,6 +32,13 @@ export async function POST(req: Request) {
     const body = await req.json();
     if (!body.pipeId || !body.title) {
       return Response.json({ error: "pipeId e title são obrigatórios." }, { status: 400, headers: noStoreHeaders });
+    }
+
+    if (!body.createdById) {
+      const session = await requireAuth(req).catch(() => null);
+      if (session?.userId) {
+        body.createdById = session.userId;
+      }
     }
 
     const card = await CardService.createCard(body);
