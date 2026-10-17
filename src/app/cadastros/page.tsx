@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
+import { maskPhone } from "@/lib/utils";
 import { 
   Building2, 
   Users, 
@@ -137,14 +138,15 @@ export default function CadastrosPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const cacheBust = `?_t=${Date.now()}`;
       const [authRes, pipesRes, storesRes, sellersRes, campaignsRes, labelsRes, messagesRes] = await Promise.all([
-        fetch("/api/auth/me"),
-        fetch("/api/pipes"),
-        fetch("/api/stores"),
-        fetch("/api/sellers"),
-        fetch("/api/campaigns"),
-        fetch("/api/labels"),
-        fetch("/api/messages"),
+        fetch(`/api/auth/me${cacheBust}`, { cache: "no-store" }),
+        fetch(`/api/pipes${cacheBust}`, { cache: "no-store" }),
+        fetch(`/api/stores${cacheBust}`, { cache: "no-store" }),
+        fetch(`/api/sellers${cacheBust}`, { cache: "no-store" }),
+        fetch(`/api/campaigns${cacheBust}`, { cache: "no-store" }),
+        fetch(`/api/labels${cacheBust}`, { cache: "no-store" }),
+        fetch(`/api/messages${cacheBust}`, { cache: "no-store" }),
       ]);
 
       if (authRes.ok) {
@@ -208,10 +210,15 @@ export default function CadastrosPage() {
     try {
       const url = editingItem ? `/api/stores/${editingItem.id}` : "/api/stores";
       const method = editingItem ? "PUT" : "POST";
+      const payload = {
+        ...storeForm,
+        name: storeForm.name.trim().toUpperCase(),
+        description: storeForm.description ? storeForm.description.trim().toUpperCase() : "",
+      };
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(storeForm),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao salvar loja.");
@@ -267,10 +274,14 @@ export default function CadastrosPage() {
     try {
       const url = editingItem ? `/api/sellers/${editingItem.id}` : "/api/sellers";
       const method = editingItem ? "PUT" : "POST";
+      const payload = {
+        ...sellerForm,
+        name: sellerForm.name.trim().toUpperCase(),
+      };
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sellerForm),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao salvar colaborador.");
@@ -347,6 +358,8 @@ export default function CadastrosPage() {
       const method = editingItem ? "PUT" : "POST";
       const payload = {
         ...campaignForm,
+        name: campaignForm.name.trim().toUpperCase(),
+        description: campaignForm.description ? campaignForm.description.trim().toUpperCase() : "",
         products: JSON.stringify(campaignForm.products),
         eligibleStores: JSON.stringify(campaignForm.eligibleStores),
       };
@@ -399,6 +412,7 @@ export default function CadastrosPage() {
       const method = editingItem ? "PUT" : "POST";
       const payload = {
         ...labelForm,
+        name: labelForm.name.trim().toUpperCase(),
         pipeId: defaultPipeId,
       };
       const res = await fetch(url, {
@@ -458,10 +472,16 @@ export default function CadastrosPage() {
     try {
       const url = editingItem ? `/api/messages/${editingItem.id}` : "/api/messages";
       const method = editingItem ? "PUT" : "POST";
+      const payload = {
+        ...messageForm,
+        title: messageForm.title.trim().toUpperCase(),
+        content: messageForm.content.trim().toUpperCase(),
+        authorName: messageForm.authorName?.trim().toUpperCase(),
+      };
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(messageForm),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao salvar comunicado.");
@@ -1174,7 +1194,7 @@ export default function CadastrosPage() {
                     type="text"
                     placeholder="Ex: (11) 98888-0001"
                     value={storeForm.phone}
-                    onChange={(e) => setStoreForm({ ...storeForm, phone: e.target.value })}
+                    onChange={(e) => setStoreForm({ ...storeForm, phone: maskPhone(e.target.value) })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   />
                 </div>
@@ -1235,7 +1255,7 @@ export default function CadastrosPage() {
                     placeholder="Ex: João Silva"
                     value={sellerForm.name}
                     onChange={(e) => setSellerForm({ ...sellerForm, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 uppercase"
                   />
                 </div>
 
@@ -1271,7 +1291,7 @@ export default function CadastrosPage() {
                     type="text"
                     placeholder="Ex: (11) 99999-2222"
                     value={sellerForm.phone}
-                    onChange={(e) => setSellerForm({ ...sellerForm, phone: e.target.value })}
+                    onChange={(e) => setSellerForm({ ...sellerForm, phone: maskPhone(e.target.value) })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   />
                 </div>

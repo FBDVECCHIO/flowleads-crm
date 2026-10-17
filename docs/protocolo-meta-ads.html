@@ -1,0 +1,636 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Protocolo de Integração Meta Ads — FlowLeads by Grupo Mário Neto</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    @page {
+      size: A4;
+      margin: 15mm 15mm 18mm 15mm;
+      @bottom-right {
+        content: "Página " counter(page) " de " counter(pages);
+        font-family: 'Inter', sans-serif;
+        font-size: 8pt;
+        color: #94a3b8;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #0f172a;
+      background-color: #ffffff;
+      line-height: 1.5;
+      font-size: 10pt;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .cover {
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 90vh;
+      padding: 40px 20px 20px 20px;
+    }
+
+    .cover-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #0284c7;
+      padding-bottom: 20px;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 11pt;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-badge span {
+      color: #38bdf8;
+    }
+
+    .doc-meta {
+      text-align: right;
+      font-size: 8.5pt;
+      color: #64748b;
+    }
+
+    .cover-body {
+      margin-top: 60px;
+    }
+
+    .doc-category {
+      display: inline-block;
+      text-transform: uppercase;
+      font-size: 8.5pt;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #0284c7;
+      background: #e0f2fe;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+
+    .cover-title {
+      font-size: 26pt;
+      font-weight: 800;
+      line-height: 1.15;
+      color: #0f172a;
+      margin-bottom: 16px;
+    }
+
+    .cover-subtitle {
+      font-size: 13pt;
+      color: #475569;
+      max-width: 650px;
+      line-height: 1.4;
+      margin-bottom: 30px;
+    }
+
+    .cover-highlight-box {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border-left: 4px solid #0284c7;
+      border-radius: 0 12px 12px 0;
+      padding: 16px 20px;
+      font-size: 9.5pt;
+      color: #334155;
+    }
+
+    .cover-footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      font-size: 8.5pt;
+    }
+
+    .footer-col h4 {
+      text-transform: uppercase;
+      font-size: 7.5pt;
+      color: #94a3b8;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .footer-col p {
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .section {
+      margin-bottom: 24px;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+
+    h2 {
+      font-size: 14pt;
+      font-weight: 800;
+      color: #0f172a;
+      border-bottom: 1.5px solid #e2e8f0;
+      padding-bottom: 6px;
+      margin-top: 20px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h2 .num {
+      background: #0284c7;
+      color: #ffffff;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9.5pt;
+      font-weight: 700;
+    }
+
+    h3 {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin-top: 14px;
+      margin-bottom: 6px;
+    }
+
+    p {
+      margin-bottom: 10px;
+      color: #334155;
+      text-align: justify;
+    }
+
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 12px;
+      color: #334155;
+    }
+
+    li {
+      margin-bottom: 5px;
+    }
+
+    .box-info {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left: 4px solid #16a34a;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 12px 0;
+      font-size: 9pt;
+      color: #166534;
+    }
+
+    .box-warning {
+      background: #fffbeb;
+      border: 1px solid #fef3c7;
+      border-left: 4px solid #d97706;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 12px 0;
+      font-size: 9pt;
+      color: #92400e;
+    }
+
+    .box-code {
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8pt;
+      overflow-x: auto;
+      margin: 12px 0;
+      line-height: 1.45;
+    }
+
+    .code-inline {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5pt;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+      font-weight: 600;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 8.5pt;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #475569;
+      font-weight: 700;
+      text-align: left;
+      padding: 8px 10px;
+      border: 1px solid #e2e8f0;
+      text-transform: uppercase;
+      font-size: 7.5pt;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 8px 10px;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+    }
+
+    tr:nth-child(even) td {
+      background: #fbfcfe;
+    }
+
+    .flow-diagram {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      margin: 14px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+
+    .flow-step-num {
+      background: #0284c7;
+      color: #ffffff;
+      font-weight: 700;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8pt;
+      flex-shrink: 0;
+    }
+
+    .flow-step-content {
+      font-size: 8.5pt;
+      color: #1e293b;
+    }
+
+    .flow-step-content strong {
+      color: #0f172a;
+    }
+
+    .badge-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-blue { background: #e0f2fe; color: #0369a1; }
+    .badge-amber { background: #fef3c7; color: #b45309; }
+  </style>
+</head>
+<body>
+
+  <!-- CAPA DO PROTOCOLO -->
+  <div class="cover">
+    <div class="cover-header">
+      <div class="brand-badge">
+        FLOW<span>LEADS</span> • GRUPO MÁRIO NETO
+      </div>
+      <div class="doc-meta">
+        <strong>DOC-REF:</strong> FL-META-INT-2026<br>
+        <strong>CLASSIFICAÇÃO:</strong> OPERACIONAL ESTRATÉGICO
+      </div>
+    </div>
+
+    <div class="cover-body">
+      <span class="doc-category">Manual Técnico Executivo</span>
+      <h1 class="cover-title">Protocolo de Integração Meta Ads & Instagram para o FlowLeads CRM</h1>
+      <p class="cover-subtitle">
+        Diretrizes completas para configuração de Webhooks em tempo real, captação de leads nativos (Instant Forms), verificação criptográfica HMAC-SHA256 e distribuição automatizada por WhatsApp para as lojas da Ótica Mário Neto.
+      </p>
+
+      <div class="cover-highlight-box">
+        <strong>Objetivo da Engenharia:</strong> Eliminar qualquer delay no atendimento de leads gerados no Facebook e Instagram Ads. O lead preenche o formulário ou clica no anúncio e, em milissegundos, é inserido na coluna <strong>NOVO LEAD</strong> com o WhatsApp e a Campanha visíveis, sendo roteado imediatamente para o vendedor de plantão.
+      </div>
+    </div>
+
+    <div class="cover-footer">
+      <div class="footer-col">
+        <h4>Organização</h4>
+        <p>Grupo Mário Neto</p>
+      </div>
+      <div class="footer-col">
+        <h4>Sistema</h4>
+        <p>FlowLeads CRM v2.4 (Enterprise)</p>
+      </div>
+      <div class="footer-col">
+        <h4>Versão & Data</h4>
+        <p>v2.4 • Outubro / 2026</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEÇÃO 1: VISÃO GERAL -->
+  <div class="section">
+    <h2><span class="num">1</span> Visão Geral da Arquitetura de Integração</h2>
+    <p>
+      O <strong>FlowLeads CRM</strong> disponibiliza uma interface programática segura (REST Webhook Endpoint) que se comunica diretamente com a API da <strong>Meta Graph (v21.0+)</strong>. O processo ocorre de forma 100% assíncrona e tolerante a falhas, garantindo que nenhum lead seja perdido, mesmo em picos massivos de campanhas promocionais.
+    </p>
+
+    <div class="flow-diagram">
+      <div class="flow-step">
+        <div class="flow-step-num">1</div>
+        <div class="flow-step-content"><strong>Cliente interage no Instagram / Facebook:</strong> Preenche o formulário Instantâneo do anúncio ou aciona a chamada no WhatsApp comercial da loja.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">2</div>
+        <div class="flow-step-content"><strong>Meta Dispara Webhook:</strong> Envia um payload JSON assinado digitalmente via POST para o endpoint do FlowLeads.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">3</div>
+        <div class="flow-step-content"><strong>Validação Criptográfica:</strong> O FlowLeads confere a assinatura HMAC-SHA256 (<span class="code-inline">x-hub-signature-256</span>) usando o App Secret para autenticidade.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">4</div>
+        <div class="flow-step-content"><strong>Roteamento Inteligente & Ingestão:</strong> O lead é criado instantaneamente no Kanban na fase imutável <strong>NOVO LEAD</strong>, com nome, WhatsApp formatado com DDD e Campanha de origem, atribuído ao vendedor do WhatsApp cadastrado.</div>
+      </div>
+    </div>
+
+    <div class="box-info">
+      <strong>Vantagem Operacional:</strong> A velocidade de primeiro contato (time-to-contact) cai para menos de <strong>60 segundos</strong>. No setor ótico, o lead atendido nos primeiros 5 minutos possui taxa de conversão em agendamento de exame e visita <strong>390% superior</strong>.
+    </div>
+  </div>
+
+  <!-- SEÇÃO 2: PARÂMETROS E ENDPOINTS DO FLOWLEADS -->
+  <div class="section">
+    <h2><span class="num">2</span> Parâmetros Técnicos do Sistema FlowLeads</h2>
+    <p>
+      Para realizar a configuração no painel do <strong>Meta for Developers</strong>, utilize os seguintes parâmetros estritos do seu ambiente de produção:
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Parâmetro</th>
+          <th>Valor de Configuração</th>
+          <th>Observação</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>URL de Retorno (Callback URL)</strong></td>
+          <td><span class="code-inline">https://flowleads-crm-blush.vercel.app/api/webhooks/meta</span></td>
+          <td>Endpoint público protegido por SSL HTTPS obrigatório.</td>
+        </tr>
+        <tr>
+          <td><strong>Token de Verificação (Verify Token)</strong></td>
+          <td><span class="code-inline">flowleads_verify_token</span></td>
+          <td>Definido na variável de ambiente <span class="code-inline">META_VERIFY_TOKEN</span>.</td>
+        </tr>
+        <tr>
+          <td><strong>Objeto Webhook</strong></td>
+          <td><span class="code-inline">Page</span> (Página do Facebook vinculada ao Instagram)</td>
+          <td>Deve ser configurado no objeto "Page".</td>
+        </tr>
+        <tr>
+          <td><strong>Campo / Evento de Assinatura</strong></td>
+          <td><span class="code-inline">leadgen</span></td>
+          <td>Evento disparado a cada novo lead submetido.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SEÇÃO 3: PASSO A PASSO NA META FOR DEVELOPERS -->
+  <div class="section page-break">
+    <h2><span class="num">3</span> Passo a Passo: Configuração no Meta for Developers</h2>
+
+    <h3>Passo 3.1 — Criação ou Seleção do Aplicativo Meta</h3>
+    <ol>
+      <li>Acesse o portal oficial: <span class="code-inline">https://developers.facebook.com</span> com a conta administradora da Business Manager (Gerenciador de Negócios) do Grupo Mário Neto.</li>
+      <li>Clique em <strong>Meus Aplicativos</strong> (My Apps) &gt; <strong>Criar Aplicativo</strong>.</li>
+      <li>Selecione o tipo de aplicativo: <strong>Empresa (Business)</strong> ou <strong>Outro</strong>.</li>
+      <li>Defina o Nome de Exibição como <span class="code-inline">FlowLeads Integration</span> e vincule à sua Conta Empresarial da Meta.</li>
+    </ol>
+
+    <h3>Passo 3.2 — Adição e Configuração do Produto Webhooks</h3>
+    <ol>
+      <li>No painel lateral esquerdo do aplicativo, localize a seção <strong>Adicionar Produtos</strong> e adicione <strong>Webhooks</strong>.</li>
+      <li>Na lista suspensa de objetos do Webhook, selecione o objeto <strong>Page</strong>.</li>
+      <li>Clique no botão <strong>Inscrever-se neste objeto</strong> (Subscribe to this object).</li>
+    </ol>
+
+    <div class="box-warning">
+      <strong>Atenção ao Handshake Inicial:</strong> A Meta enviará imediatamente uma requisição <span class="code-inline">GET</span> para validar a URL antes de salvar. O FlowLeads já responde com status <span class="code-inline">200 OK</span> e o <span class="code-inline">hub.challenge</span> idêntico.
+    </div>
+
+    <h3>Passo 3.3 — Preenchimento dos Dados de Conexão</h3>
+    <ol>
+      <li>No campo <strong>URL de Retorno</strong> (Callback URL), cole:<br>
+        <span class="code-inline">https://flowleads-crm-blush.vercel.app/api/webhooks/meta</span>
+      </li>
+      <li>No campo <strong>Verificar Token</strong> (Verify Token), informe:<br>
+        <span class="code-inline">flowleads_verify_token</span>
+      </li>
+      <li>Clique em <strong>Verificar e Salvar</strong> (Verify and Save). O sistema validará a rota instantaneamente.</li>
+      <li>Na tabela de campos da Página, localize o evento <strong>leadgen</strong> e clique em <strong>Inscrever-se</strong> (Subscribe).</li>
+    </ol>
+
+    <h3>Passo 3.4 — Obtenção do App Secret para Validação Criptográfica</h3>
+    <ol>
+      <li>No menu lateral, vá em <strong>Configurações do Aplicativo</strong> &gt; <strong>Básico</strong>.</li>
+      <li>Localize o campo <strong>Chave Secreta do Aplicativo</strong> (App Secret).</li>
+      <li>Copie este segredo e adicione na variável de ambiente <span class="code-inline">META_APP_SECRET</span> nas configurações da Vercel para que todas as requisições tenham sua assinatura digital HMAC-SHA256 validada com total segurança.</li>
+    </ol>
+  </div>
+
+  <!-- SEÇÃO 4: INSCRIÇÃO DA PÁGINA E DOS FORMULÁRIOS -->
+  <div class="section">
+    <h2><span class="num">4</span> Inscrição da Página do Facebook e Formulários Instantâneos</h2>
+    <p>
+      Para que a Meta envie os eventos dos anúncios específicos da sua ótica para o Webhook configurado, a sua Página do Facebook precisa estar explicitamente subscrita ao aplicativo:
+    </p>
+
+    <ol>
+      <li>No <strong>Meta Business Suite</strong>, garanta que a Página da ótica possui os formulários instantâneos ativos em <em>Conteúdo &gt; Formulários de Anúncios de Cadastro</em>.</li>
+      <li>Conceda ao seu Aplicativo as permissões:
+        <ul>
+          <li><span class="code-inline">leads_retrieval</span> (Recuperação de dados de leads)</li>
+          <li><span class="code-inline">pages_manage_ads</span> (Gestão de anúncios da página)</li>
+          <li><span class="code-inline">pages_read_engagement</span> (Leitura de eventos de engajamento)</li>
+        </ul>
+      </li>
+      <li>Para confirmar a subscrição da página via API ou Graph Explorer, execute a chamada <span class="code-inline">POST /{PAGE_ID}/subscribed_apps</span> com o Token de Acesso da Página.</li>
+    </ol>
+  </div>
+
+  <!-- SEÇÃO 5: ROTEAMENTO INTELIGENTE E GOVERNANÇA NO FLOWLEADS -->
+  <div class="section page-break">
+    <h2><span class="num">5</span> Roteamento Inteligente por WhatsApp & Governança de Fases</h2>
+
+    <p>
+      O FlowLeads foi concebido sob medida para a operação diária das óticas do Grupo Mário Neto. A ingestão de leads respeita as seguintes regras estritas de negócio:
+    </p>
+
+    <h3>5.1 Roteamento por WhatsApp do Vendedor</h3>
+    <ul>
+      <li>No menu <strong>Usuários</strong> do FlowLeads (acesso Supervisor), cada vendedor possui seu número de WhatsApp comercial cadastrado com a máscara obrigatória com DDD: <span class="code-inline">(XX) XXXXX-XXXX</span>.</li>
+      <li>Quando a campanha da Meta direciona o lead para um WhatsApp específico ou para a central de captação de uma unidade, o FlowLeads identifica o vendedor correspondente e atribui o lead diretamente ao seu Kanban individual.</li>
+      <li>Se não houver correlação direta, o lead é atribuído automaticamente ao Captador da Central de Recepção para triagem imediata.</li>
+    </ul>
+
+    <h3>5.2 Fases Imutáveis no Kanban de Leads</h3>
+    <p>
+      Para preservar a integridade histórica dos dados e dos indicadores de conversão da ótica, três colunas são <strong>imutáveis</strong>:
+    </p>
+    <ul>
+      <li><strong>NOVO LEAD (Fase 1):</strong> Entrada primária obrigatória de todos os leads da Meta e captação manual. Não pode ser renomeada nem excluída.</li>
+      <li><strong>FECHADO (Ganho):</strong> Fase de conclusão bem-sucedida da venda ótica. Não pode ser renomeada nem excluída.</li>
+      <li><strong>PERDIDO (Perda):</strong> Fase de encerramento sem venda. Não pode ser renomeada nem excluída.</li>
+    </ul>
+    <p>
+      Colunas intermediárias personalizadas (ex: <em>CONTATO FEITO</em>, <em>VISITA AGENDADA</em>, <em>AGUARDANDO EXAME</em>) podem ser criadas, renomeadas ou excluídas pelo usuário a qualquer momento através do menu de três pontos no canto superior direito de cada coluna.
+    </p>
+
+    <h3>5.3 Regras de Bloqueio Operacional Ótico</h3>
+    <div class="box-warning">
+      <strong>Regra 1 — Travamento de Movimentação em "NOVO LEAD":</strong><br>
+      Para que o vendedor consiga mover o card da coluna <strong>NOVO LEAD</strong> para qualquer coluna posterior, é <strong>obrigatório</strong> informar previamente a <strong>Loja Negociada</strong> e a <strong>Data/Hora Estimada da Visita à Loja</strong>. Sem esses dois campos preenchidos, o sistema impede a movimentação e abre automaticamente o drawer do lead.
+    </div>
+
+    <div class="box-warning">
+      <strong>Regra 2 — Travamento de Dados de Fechamento da Venda:</strong><br>
+      Os campos críticos de faturamento (<strong>Número da OS</strong>, <strong>Valor Final da Venda</strong>, <strong>Vendedor que Fechou</strong> e <strong>Data da Venda</strong>) permanecem travados com cadeado de segurança e só são habilitados para preenchimento quando o card é movido para o status <strong>FECHADO</strong>.
+    </div>
+  </div>
+
+  <!-- SEÇÃO 6: TESTE E VALIDAÇÃO -->
+  <div class="section">
+    <h2><span class="num">6</span> Testes em Tempo Real com a Lead Ads Testing Tool</h2>
+    <p>
+      A Meta disponibiliza uma ferramenta oficial para simulação de disparos de leads sem gastar verba de anúncio. Utilize o procedimento abaixo para homologar a integração:
+    </p>
+
+    <ol>
+      <li>Acesse a ferramenta: <span class="code-inline">https://developers.facebook.com/tools/lead-ads-testing</span></li>
+      <li>Selecione a <strong>Página do Facebook</strong> do Grupo Mário Neto.</li>
+      <li>Selecione o <strong>Formulário Instantâneo</strong> cadastrado na campanha.</li>
+      <li>Clique em <strong>Criar Cadastro</strong> (Create Lead).</li>
+      <li>Abra o FlowLeads no menu <strong>Kanban de Leads</strong> (<span class="code-inline">/pipes/[id]</span>).</li>
+      <li>O card aparecerá imediatamente na primeira coluna <strong>NOVO LEAD</strong>, contendo:
+        <ul>
+          <li>Nome do Lead em letras maiúsculas (UPPERCASE);</li>
+          <li>WhatsApp com máscara e botão com link direto para chamada no WhatsApp Web/App (<span class="code-inline">https://wa.me/55...</span>);</li>
+          <li>Etiqueta da Campanha vinculada (ex: <em>PROMOÇÃO MULTIFOCAL VARILUX</em>).</li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+
+  <!-- SEÇÃO 7: SEGURANÇA E LGPD -->
+  <div class="section page-break">
+    <h2><span class="num">7</span> Segurança da Informação, Criptografia e LGPD</h2>
+    <p>
+      O fluxo de dados segue os mais rigorosos padrões de segurança cibernética e de conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018):
+    </p>
+
+    <ul>
+      <li><strong>Validação Criptográfica HMAC-SHA256:</strong> Cada requisição recebida da Meta é verificada byte a byte através da função <span class="code-inline">crypto.timingSafeEqual</span>, prevenindo ataques de adulteração de pacote (Man-in-the-Middle) e vulnerabilidades de timing side-channel.</li>
+      <li><strong>Comunicação Criptografada em Trânsito (TLS 1.3):</strong> Todo tráfego entre a infraestrutura da Meta e a nuvem do FlowLeads é estritamente criptografado via HTTPS.</li>
+      <li><strong>Proteção Contra Reversão de Dados (Cache-Control No-Store):</strong> As rotas de leitura e gravação operam com direct-write no banco PostgreSQL e cabeçalhos <span class="code-inline">Cache-Control: no-store, no-cache</span>, garantindo que atualizações e exclusões sejam perpétuas mesmo após <kbd>F5</kbd> ou <kbd>Ctrl+F5</kbd>.</li>
+      <li><strong>Logs e Rastreabilidade:</strong> Toda ingestão gera um registro imutável em <span class="code-inline">CardActivity</span> com o ID de auditoria do evento da Meta (<span class="code-inline">leadgen_id</span>).</li>
+    </ul>
+
+    <h3>Matriz de Resolução de Erros (Troubleshooting)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Código HTTP</th>
+          <th>Causa Provável</th>
+          <th>Ação Corretiva</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge-pill badge-green">200 OK</span></td>
+          <td>Handshake ou Ingestão processada com sucesso.</td>
+          <td>Nenhuma ação necessária. Lead inserido com êxito.</td>
+        </tr>
+        <tr>
+          <td><span class="badge-pill badge-amber">403 Forbidden</span></td>
+          <td>Token de verificação inválido ou divergência na assinatura HMAC.</td>
+          <td>Verifique se <span class="code-inline">META_VERIFY_TOKEN</span> e <span class="code-inline">META_APP_SECRET</span> coincidem exatamente.</td>
+        </tr>
+        <tr>
+          <td><span class="badge-pill badge-amber">400 Bad Request</span></td>
+          <td>Falta do parâmetro <span class="code-inline">hub.challenge</span> na verificação inicial.</td>
+          <td>Garantir que a URL chamada pelo Meta contenha a query string original.</td>
+        </tr>
+        <tr>
+          <td><span class="badge-pill badge-amber">500 Internal Error</span></td>
+          <td>Falha de conexão com o banco de dados PostgreSQL.</td>
+          <td>Verificar o status da conexão do banco de dados na Vercel / Prisma.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ASSINATURAS E APROVAÇÃO -->
+  <div class="section" style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+    <h3 style="text-align: center; margin-bottom: 30px; font-size: 10pt; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">
+      Homologação e Autorização de Uso Operacional
+    </h3>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; text-align: center;">
+      <div>
+        <div style="border-bottom: 1px solid #94a3b8; width: 80%; margin: 0 auto 8px auto;"></div>
+        <strong style="font-size: 9pt; color: #0f172a; display: block;">Supervisão Comercial Geral</strong>
+        <span style="font-size: 8pt; color: #64748b;">Grupo Mário Neto</span>
+      </div>
+      <div>
+        <div style="border-bottom: 1px solid #94a3b8; width: 80%; margin: 0 auto 8px auto;"></div>
+        <strong style="font-size: 9pt; color: #0f172a; display: block;">Engenharia de Software & Arquitetura CRM</strong>
+        <span style="font-size: 8pt; color: #64748b;">FlowLeads Core Engine</span>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

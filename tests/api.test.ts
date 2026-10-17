@@ -48,7 +48,7 @@ test("Task 5: REST API Route Handlers Integration Test", async () => {
   const cardsReq = new Request(`http://localhost/api/cards?pipeId=${pipeId}`);
   const cardsRes = await getCards(cardsReq);
   const cards = await cardsRes.json();
-  assert.ok(cards.some((c: any) => c.title.includes("Inova Rede Telecom")));
+  assert.ok(cards.some((c: any) => c.title.toUpperCase().includes("INOVA REDE TELECOM")));
 
   // 5. GET /api/reports?pipeId=...
   const reportsReq = new Request(`http://localhost/api/reports?pipeId=${pipeId}`);

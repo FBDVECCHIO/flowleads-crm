@@ -1,7 +1,7 @@
 "use client";
 
 import { Clock, CheckSquare, MessageSquare, AlertCircle, DollarSign, User, MoreVertical, MoreHorizontal } from "lucide-react";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, maskPhone } from "@/lib/utils";
 import { CardContextMenu } from "./CardContextMenu";
 
 export interface CardItemProps {
@@ -47,6 +47,19 @@ export function CardItem({
   };
 
   const hasCustomColor = card.color && card.color !== "#ffffff";
+
+  // Extrair dados explícitos do lead
+  const getValue = (identifier: string) => {
+    const valObj = card.values?.find((v: any) => v.field?.identifier === identifier);
+    return valObj?.value ? String(valObj.value).trim() : "";
+  };
+
+  const clientName = (getValue("lead_name") || card.title || "LEAD SEM NOME").toUpperCase();
+  const rawPhone = getValue("lead_phone") || "";
+  const clientPhone = rawPhone ? maskPhone(rawPhone) : "NÃO INFORMADO";
+  const cleanPhoneDigits = rawPhone.replace(/\D/g, "");
+  const whatsappUrl = cleanPhoneDigits ? `https://wa.me/55${cleanPhoneDigits.startsWith("55") ? cleanPhoneDigits.slice(2) : cleanPhoneDigits}` : null;
+  const campaign = (getValue("campaign_interest") || getValue("lead_origin") || "META ADS").toUpperCase();
 
   return (
     <div
@@ -98,9 +111,43 @@ export function CardItem({
         </div>
       )}
 
-      <h4 className="text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors leading-snug">
-        {card.title}
-      </h4>
+      {/* 1. Nome do Cliente (Proeminente) */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-1.5 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+          <User className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+          <span className="text-xs truncate tracking-tight uppercase" title={clientName}>
+            {clientName}
+          </span>
+        </div>
+      </div>
+
+      {/* 2. WhatsApp Formatado com Botão de Ação Direta */}
+      <div className="flex items-center justify-between text-[11px] bg-slate-50 rounded px-2.5 py-1.5 border border-slate-100">
+        <div className="flex items-center gap-1.5 text-slate-700 font-medium">
+          <MessageSquare className="w-3 h-3 text-emerald-600 shrink-0" />
+          <span className="font-mono text-[11px]">{clientPhone}</span>
+        </div>
+        {whatsappUrl && (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline px-1.5 py-0.5 bg-emerald-50 rounded border border-emerald-200 transition-colors"
+            title="Abrir conversa no WhatsApp Web"
+          >
+            Chamar
+          </a>
+        )}
+      </div>
+
+      {/* 3. Campanha de Origem (Meta Ads / Manual) */}
+      <div className="flex items-center gap-1.5 text-[10px] text-purple-700 bg-purple-50/90 px-2 py-1 rounded border border-purple-100 font-semibold truncate">
+        <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
+        <span className="truncate uppercase" title={`Campanha: ${campaign}`}>
+          {campaign}
+        </span>
+      </div>
 
       <div className="flex items-center justify-between text-xs text-slate-600 pt-1 border-t border-slate-100">
         <span className="font-semibold text-emerald-700 flex items-center gap-0.5">
@@ -120,6 +167,7 @@ export function CardItem({
           </span>
         )}
       </div>
+
 
       <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
         <div className="flex items-center gap-2.5">

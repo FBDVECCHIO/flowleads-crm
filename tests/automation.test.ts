@@ -34,6 +34,8 @@ test("Task 4: Automation Engine & Webhook Dispatcher Tests", async () => {
 
   await CardService.moveCard(lead.id, proposalPhase.id, {
     payment_terms: "Anual à vista (15% desconto)",
+    store_negotiated: "ÓTICA MÁRIO NETO - MATRIZ",
+    estimated_visit_datetime: "2026-10-25T14:00:00",
   });
 
   const emails = await prisma.emailOutbox.findMany({

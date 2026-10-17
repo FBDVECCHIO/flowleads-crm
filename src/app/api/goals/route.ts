@@ -2,6 +2,15 @@ import { getDefaultUser, verifySession } from "../../../lib/auth.ts";
 import { getUserGoal, getTeamGoalRanking } from "../../../services/goalService.ts";
 import { prisma } from "../../../lib/prisma.ts";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const noStoreHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  "Pragma": "no-cache",
+  "Expires": "0",
+};
+
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
@@ -47,8 +56,9 @@ export async function GET(req: Request) {
       userGoal,
       teamRanking,
       isSupervisor: isSupervisorOrAdmin,
-    });
+    }, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });
   }
 }
+

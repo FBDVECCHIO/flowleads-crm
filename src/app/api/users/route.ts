@@ -1,6 +1,16 @@
 import { prisma } from "../../../lib/prisma.ts";
 import { requireAuth } from "../../../lib/auth.ts";
+import { maskPhone } from "../../../lib/utils.ts";
 import bcrypt from "bcryptjs";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const noStoreHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  "Pragma": "no-cache",
+  "Expires": "0",
+};
 
 export async function GET(req: Request) {
   try {
@@ -11,14 +21,15 @@ export async function GET(req: Request) {
     if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
       return Response.json(
         { error: "Acesso restrito para Supervisores e Administradores." },
-        { status: 403 }
+        { status: 403, headers: noStoreHeaders }
       );
     }
 
     const orgId = session?.organizationId || (await prisma.organization.findFirst())?.id;
     if (!orgId) {
-      return Response.json({ error: "Organização não localizada." }, { status: 404 });
+      return Response.json({ error: "Organização não localizada." }, { status: 404, headers: noStoreHeaders });
     }
+
 
     const users = await prisma.user.findMany({
       where: { organizationId: orgId },
@@ -41,9 +52,9 @@ export async function GET(req: Request) {
       orderBy: [{ role: "asc" }, { name: "asc" }],
     });
 
-    return Response.json(users);
+    return Response.json(users, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message || "Erro ao listar usuários." }, { status: error.status || 500 });
+    return Response.json({ error: error.message || "Erro ao listar usuários." }, { status: error.status || 500, headers: noStoreHeaders });
   }
 }
 
@@ -55,7 +66,7 @@ export async function POST(req: Request) {
     if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
       return Response.json(
         { error: "Apenas Supervisores ou Administradores podem cadastrar novos usuários." },
-        { status: 403 }
+        { status: 403, headers: noStoreHeaders }
       );
     }
 
@@ -76,15 +87,15 @@ export async function POST(req: Request) {
     } = body;
 
     if (!name || typeof name !== "string" || !name.trim()) {
-      return Response.json({ error: "Nome completo é obrigatório." }, { status: 400 });
+      return Response.json({ error: "Nome completo é obrigatório." }, { status: 400, headers: noStoreHeaders });
     }
 
     if (!email || typeof email !== "string" || !email.includes("@")) {
-      return Response.json({ error: "E-mail comercial válido é obrigatório." }, { status: 400 });
+      return Response.json({ error: "E-mail comercial válido é obrigatório." }, { status: 400, headers: noStoreHeaders });
     }
 
     if (!password || typeof password !== "string" || password.length < 6) {
-      return Response.json({ error: "Senha deve conter no mínimo 6 caracteres." }, { status: 400 });
+      return Response.json({ error: "Senha deve conter no mínimo 6 caracteres." }, { status: 400, headers: noStoreHeaders });
     }
 
     // Check if email already exists
@@ -92,12 +103,12 @@ export async function POST(req: Request) {
       where: { email: email.trim().toLowerCase() },
     });
     if (existing) {
-      return Response.json({ error: "Já existe um usuário cadastrado com este e-mail." }, { status: 409 });
+      return Response.json({ error: "Já existe um usuário cadastrado com este e-mail." }, { status: 409, headers: noStoreHeaders });
     }
 
     const orgId = session?.organizationId || (await prisma.organization.findFirst())?.id;
     if (!orgId) {
-      return Response.json({ error: "Organização não localizada." }, { status: 404 });
+      return Response.json({ error: "Organização não localizada." }, { status: 404, headers: noStoreHeaders });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -105,11 +116,11 @@ export async function POST(req: Request) {
     const newUser = await prisma.user.create({
       data: {
         organizationId: orgId,
-        name: name.trim(),
+        name: name.trim().toUpperCase(),
         email: email.trim().toLowerCase(),
         passwordHash,
         role: role.toUpperCase(),
-        whatsappNumber: whatsappNumber ? String(whatsappNumber).trim() : null,
+        whatsappNumber: whatsappNumber ? maskPhone(String(whatsappNumber).trim()) : null,
         monthlyTargetAmount: Number(monthlyTargetAmount) || 100000,
         monthlyTargetDeals: Number(monthlyTargetDeals) || 10,
         workingDaysPerMonth: Number(workingDaysPerMonth) || 22,
@@ -135,8 +146,9 @@ export async function POST(req: Request) {
       },
     });
 
-    return Response.json(newUser, { status: 201 });
+    return Response.json(newUser, { status: 201, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message || "Erro ao criar usuário." }, { status: 500 });
+    return Response.json({ error: error.message || "Erro ao criar usuário." }, { status: 500, headers: noStoreHeaders });
   }
 }
+

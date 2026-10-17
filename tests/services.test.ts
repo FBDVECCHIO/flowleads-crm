@@ -24,10 +24,10 @@ test("Task 3: Domain Services Unit & Integration Tests", async () => {
     },
   });
   assert.ok(newLead);
-  assert.equal(newLead.title, "Empresa Teste Inbound Ltda");
+  assert.equal(newLead.title, "EMPRESA TESTE INBOUND LTDA");
   assert.equal(newLead.currentPhase.name, "Novos Leads");
 
-  // 3. Tentar mover para "Qualificação (SDR)" SEM preencher bant_budget (deve lançar erro de validação)
+  // 3. Tentar mover para "Qualificação (SDR)" SEM preencher campos obrigatórios
   const qualifyPhase = pipe.phases.find((p) => p.name === "Qualificação (SDR)");
   assert.ok(qualifyPhase);
 
@@ -36,13 +36,18 @@ test("Task 3: Domain Services Unit & Integration Tests", async () => {
     await CardService.moveCard(newLead.id, qualifyPhase.id);
   } catch (err: any) {
     errorThrown = true;
-    assert.ok(err.message.includes("Campos obrigatórios não preenchidos"));
+    assert.ok(
+      err.message.includes("Campos obrigatórios não preenchidos") ||
+      err.message.includes("obrigatório preencher a Loja Negociada")
+    );
   }
   assert.equal(errorThrown, true, "Deveria ter bloqueado avanço sem campo obrigatório");
 
-  // 4. Mover para "Qualificação (SDR)" COM preenchimento do campo obrigatório
+  // 4. Mover para "Qualificação (SDR)" COM preenchimento dos campos obrigatórios
   const movedCard = await CardService.moveCard(newLead.id, qualifyPhase.id, {
     bant_budget: "R$ 5.000 a R$ 20.000/mês",
+    store_negotiated: "ÓTICA MÁRIO NETO - MATRIZ",
+    estimated_visit_datetime: "2026-10-25T14:00:00",
   });
   assert.ok(movedCard);
   assert.equal(movedCard.currentPhaseId, qualifyPhase.id);

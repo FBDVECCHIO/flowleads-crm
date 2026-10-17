@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { prisma } from "../lib/prisma.ts";
+import { maskPhone } from "../lib/utils.ts";
 
 export interface MetaWebhookPayload {
   entry: Array<{
@@ -137,9 +138,11 @@ export async function processMetaLead(
   }
 
   // 4. Create Card in initial phase
-  const leadTitle = overrideData?.name
-    ? `Lead Meta: ${overrideData.name}`
-    : `Novo Lead Meta #${leadgenId.slice(-6)}`;
+  const leadTitle = (
+    overrideData?.name
+      ? `LEAD META: ${overrideData.name}`
+      : `NOVO LEAD META #${leadgenId.slice(-6)}`
+  ).toUpperCase();
 
   const card = await prisma.card.create({
     data: {
@@ -162,11 +165,12 @@ export async function processMetaLead(
     let valToSet: string | undefined;
     const ident = field.identifier.toLowerCase();
     if (ident.includes("phone") || ident.includes("telefone") || ident.includes("whatsapp")) {
-      valToSet = overrideData?.phone || overrideData?.destination_whatsapp;
+      const rawPhone = overrideData?.phone || overrideData?.destination_whatsapp;
+      valToSet = rawPhone ? maskPhone(rawPhone) : undefined;
     } else if (ident.includes("mail")) {
       valToSet = overrideData?.email;
     } else if (ident.includes("campanha") || ident.includes("campaign")) {
-      valToSet = overrideData?.campaign_id;
+      valToSet = overrideData?.campaign_id ? overrideData.campaign_id.toUpperCase() : undefined;
     }
 
     if (valToSet) {

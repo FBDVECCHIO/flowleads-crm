@@ -54,6 +54,8 @@ test("Task 14: Full End-to-End Flow Test (FlowLeads CRM Workflow)", async () => 
 
   card = await CardService.moveCard(cardId, phaseQualify.id, {
     bant_budget: "Acima de R$ 20.000/mês",
+    store_negotiated: "ÓTICA MÁRIO NETO - MATRIZ",
+    estimated_visit_datetime: "2026-10-25T14:00:00",
   });
   assert.equal(card.currentPhaseId, phaseQualify.id);
 

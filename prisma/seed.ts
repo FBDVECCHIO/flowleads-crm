@@ -6,7 +6,15 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Iniciando seed do FlowLeads CRM...");
 
-  // 1. Limpar banco existente
+  const force = process.argv.includes("--force");
+  const existingOrg = await prisma.organization.findFirst();
+
+  if (existingOrg && !force) {
+    console.log("Banco de dados já populado. Pulando seed para preservar integridade dos dados existentes.");
+    return;
+  }
+
+  // 1. Limpar banco existente se explicitamente requisitado
   await prisma.systemMessage.deleteMany();
   await prisma.campaign.deleteMany();
   await prisma.seller.deleteMany();

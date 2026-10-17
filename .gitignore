@@ -8,3 +8,7 @@ playwright-report
 docs/research/raw
 
 .vercel
+.env*
+
+prisma/*.db
+prisma/*.db-journal

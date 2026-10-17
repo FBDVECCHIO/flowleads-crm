@@ -2,6 +2,15 @@ import { CardService, deleteCard, updateCardColor, moveCard, updateCardFields, u
 import { prisma } from "../../../../lib/prisma.ts";
 import { requireAuth } from "../../../../lib/auth.ts";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const noStoreHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  "Pragma": "no-cache",
+  "Expires": "0",
+};
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> | { id: string } }
@@ -9,12 +18,13 @@ export async function GET(
   try {
     const resolvedParams = await Promise.resolve(params);
     const card = await getCardById(resolvedParams.id);
-    if (!card) return Response.json({ error: "Card não encontrado." }, { status: 404 });
-    return Response.json(card);
+    if (!card) return Response.json({ error: "Card não encontrado." }, { status: 404, headers: noStoreHeaders });
+    return Response.json(card, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });
   }
 }
+
 
 export async function PUT(
   req: Request,

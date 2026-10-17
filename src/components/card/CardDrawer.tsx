@@ -16,9 +16,10 @@ import {
   Trash2,
   Check,
   Building2,
-  Sparkles
+  Sparkles,
+  Lock
 } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, maskPhone } from "@/lib/utils";
 
 export interface CardDrawerProps {
   card: any;
@@ -90,22 +91,25 @@ export function CardDrawer({
 
   const handleSaveTitle = async () => {
     if (!currentTitle.trim()) return;
+    const cleanTitle = currentTitle.trim().toUpperCase();
     try {
       if (onRenameCard) {
-        await onRenameCard(card.id, currentTitle.trim());
+        await onRenameCard(card.id, cleanTitle);
       } else {
         await fetch(`/api/cards/${card.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: currentTitle.trim() }),
+          body: JSON.stringify({ title: cleanTitle }),
         });
       }
-      card.title = currentTitle.trim();
+      card.title = cleanTitle;
+      setCurrentTitle(cleanTitle);
       setIsEditingTitle(false);
     } catch (err: any) {
       setErrorMsg(err.message || "Erro ao renomear card.");
     }
   };
+
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -161,7 +165,13 @@ export function CardDrawer({
   const visibleFields = fields.filter((f) => !f.phaseId || f.phaseId === card.currentPhaseId);
 
   const handleFieldChange = (identifier: string, value: string) => {
-    setFormValues((prev) => ({ ...prev, [identifier]: value }));
+    let cleanVal = value;
+    if (identifier.includes("phone")) {
+      cleanVal = maskPhone(cleanVal);
+    } else if (!identifier.includes("email") && !identifier.includes("url") && !identifier.includes("link")) {
+      cleanVal = cleanVal.toUpperCase();
+    }
+    setFormValues((prev) => ({ ...prev, [identifier]: cleanVal }));
   };
 
   const handleSaveFields = async () => {
@@ -192,12 +202,13 @@ export function CardDrawer({
     e.preventDefault();
     if (!newComment.trim()) return;
     try {
-      await onAddComment(card.id, newComment);
+      await onAddComment(card.id, newComment.trim().toUpperCase());
       setNewComment("");
     } catch (err: any) {
       setErrorMsg(err.message);
     }
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-sm transition-opacity">
@@ -375,126 +386,173 @@ export function CardDrawer({
 
               {/* Grid Compacto de Campos */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {visibleFields.map((field) => {
-                  const isTextArea = field.type === "TEXTAREA";
-                  const isSelect = field.type === "SELECT";
-                  const isCampaign = field.identifier === "campaign_interest";
-                  const isStore = field.identifier === "store_negotiated";
-                  const isSeller = field.identifier === "seller_name";
+                {(() => {
+                  const closingFieldKeys = new Set(["os_number", "sale_amount", "seller_name", "sale_date"]);
+                  const isWonPhase = Boolean(currentPhase?.isFinalWon || /ganho|fechado\s*ganho/i.test(currentPhase?.name || ""));
 
-                  return (
-                    <div 
-                      key={field.id} 
-                      className={`space-y-1 ${isTextArea ? "sm:col-span-2" : ""}`}
-                    >
-                      <label className="block text-[11px] font-semibold text-slate-700">
-                        {field.label} {field.isRequired && <span className="text-red-500">*</span>}
-                      </label>
+                  return visibleFields.map((field) => {
+                    const isTextArea = field.type === "TEXTAREA";
+                    const isSelect = field.type === "SELECT";
+                    const isCampaign = field.identifier === "campaign_interest";
+                    const isStore = field.identifier === "store_negotiated";
+                    const isSeller = field.identifier === "seller_name";
+                    const isClosingField = closingFieldKeys.has(field.identifier);
+                    const isLocked = isClosingField && !isWonPhase;
 
-                      {isTextArea ? (
-                        <textarea
-                          rows={2}
-                          value={formValues[field.identifier] || ""}
-                          onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                          placeholder={field.placeholder || ""}
-                          className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                      ) : isCampaign ? (
-                        <select
-                          value={formValues[field.identifier] || ""}
-                          onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                          className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                        >
-                          <option value="">Selecione uma campanha...</option>
-                          {campaigns.length > 0
-                            ? campaigns.map((c) => (
-                                <option key={c.id} value={c.name}>
-                                  {c.name}
+                    return (
+                      <div 
+                        key={field.id} 
+                        className={`space-y-1 ${isTextArea ? "sm:col-span-2" : ""}`}
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <label className="block text-[11px] font-semibold text-slate-700">
+                            {field.label} {field.isRequired && <span className="text-red-500">*</span>}
+                          </label>
+                          {isLocked && (
+                            <span className="text-[9px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-semibold border border-amber-200 flex items-center gap-1">
+                              <Lock className="w-2.5 h-2.5" />
+                              Fase Fechado
+                            </span>
+                          )}
+                        </div>
+
+                        {isTextArea ? (
+                          <textarea
+                            rows={2}
+                            disabled={isLocked}
+                            value={formValues[field.identifier] || ""}
+                            onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
+                            placeholder={isLocked ? "Disponível apenas na fase Fechado Ganho" : field.placeholder || ""}
+                            className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                              isLocked
+                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
+                                : "border-slate-300"
+                            }`}
+                          />
+                        ) : isCampaign ? (
+                          <select
+                            disabled={isLocked}
+                            value={formValues[field.identifier] || ""}
+                            onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
+                            className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                              isLocked
+                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
+                                : "border-slate-300 bg-white"
+                            }`}
+                          >
+                            <option value="">Selecione uma campanha...</option>
+                            {campaigns.length > 0
+                              ? campaigns.map((c) => (
+                                  <option key={c.id} value={c.name}>
+                                    {c.name}
+                                  </option>
+                                ))
+                              : JSON.parse(field.options || "[]").map((opt: string) => (
+                                  <option key={opt} value={opt}>
+                                    {opt}
+                                  </option>
+                                ))}
+                          </select>
+                        ) : isStore ? (
+                          <select
+                            disabled={isLocked}
+                            value={formValues[field.identifier] || ""}
+                            onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
+                            className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                              isLocked
+                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
+                                : "border-slate-300 bg-white"
+                            }`}
+                          >
+                            <option value="">Selecione a loja de destino...</option>
+                            {stores.length > 0
+                              ? stores.map((s) => (
+                                  <option key={s.id} value={s.name}>
+                                    {s.name}
+                                  </option>
+                                ))
+                              : JSON.parse(field.options || "[]").map((opt: string) => (
+                                  <option key={opt} value={opt}>
+                                    {opt}
+                                  </option>
+                                ))}
+                          </select>
+                        ) : isSeller ? (
+                          (() => {
+                            const matchedStore = stores.find((s) => s.name === formValues["store_negotiated"]);
+                            const filteredSellers = matchedStore
+                              ? sellers.filter((s) => s.storeId === matchedStore.id)
+                              : sellers;
+                            return (
+                              <select
+                                disabled={isLocked}
+                                value={formValues[field.identifier] || ""}
+                                onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
+                                className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                  isLocked
+                                    ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
+                                    : "border-slate-300 bg-white"
+                                }`}
+                              >
+                                <option value="">
+                                  {isLocked ? "Disponível apenas na fase Fechado Ganho" : "Selecione o vendedor / atendente..."}
                                 </option>
-                              ))
-                            : JSON.parse(field.options || "[]").map((opt: string) => (
-                                <option key={opt} value={opt}>
-                                  {opt}
-                                </option>
-                              ))}
-                        </select>
-                      ) : isStore ? (
-                        <select
-                          value={formValues[field.identifier] || ""}
-                          onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                          className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                        >
-                          <option value="">Selecione a loja de destino...</option>
-                          {stores.length > 0
-                            ? stores.map((s) => (
-                                <option key={s.id} value={s.name}>
-                                  {s.name}
-                                </option>
-                              ))
-                            : JSON.parse(field.options || "[]").map((opt: string) => (
-                                <option key={opt} value={opt}>
-                                  {opt}
-                                </option>
-                              ))}
-                        </select>
-                      ) : isSeller ? (
-                        (() => {
-                          const matchedStore = stores.find((s) => s.name === formValues["store_negotiated"]);
-                          const filteredSellers = matchedStore
-                            ? sellers.filter((s) => s.storeId === matchedStore.id)
-                            : sellers;
-                          return (
-                            <select
-                              value={formValues[field.identifier] || ""}
-                              onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                              className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                            >
-                              <option value="">Selecione o vendedor / atendente...</option>
-                              {filteredSellers.length > 0
-                                ? filteredSellers.map((sel) => (
-                                    <option key={sel.id} value={sel.name}>
-                                      {sel.name} ({sel.role})
-                                    </option>
-                                  ))
-                                : JSON.parse(field.options || "[]").map((opt: string) => (
-                                    <option key={opt} value={opt}>
-                                      {opt}
-                                    </option>
-                                  ))}
-                            </select>
-                          );
-                        })()
-                      ) : isSelect ? (
-                        <select
-                          value={formValues[field.identifier] || ""}
-                          onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                          className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                        >
-                          <option value="">Selecione...</option>
-                          {JSON.parse(field.options || "[]").map((opt: string) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <input
-                          type={
-                            field.type === "NUMBER" || field.type === "CURRENCY"
-                              ? "number"
-                              : field.type === "DATE"
-                              ? "date"
-                              : "text"
-                          }
-                          value={formValues[field.identifier] || ""}
-                          onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                          placeholder={field.placeholder || ""}
-                          className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                      )}
-                    </div>
-                  );
-                })}
+                                {filteredSellers.length > 0
+                                  ? filteredSellers.map((sel) => (
+                                      <option key={sel.id} value={sel.name}>
+                                        {sel.name} ({sel.role})
+                                      </option>
+                                    ))
+                                  : JSON.parse(field.options || "[]").map((opt: string) => (
+                                      <option key={opt} value={opt}>
+                                        {opt}
+                                      </option>
+                                    ))}
+                              </select>
+                            );
+                          })()
+                        ) : isSelect ? (
+                          <select
+                            disabled={isLocked}
+                            value={formValues[field.identifier] || ""}
+                            onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
+                            className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                              isLocked
+                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
+                                : "border-slate-300 bg-white"
+                            }`}
+                          >
+                            <option value="">Selecione...</option>
+                            {JSON.parse(field.options || "[]").map((opt: string) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type={
+                              field.type === "NUMBER" || field.type === "CURRENCY"
+                                ? "number"
+                                : field.type === "DATE"
+                                ? "date"
+                                : "text"
+                            }
+                            disabled={isLocked}
+                            value={formValues[field.identifier] || ""}
+                            onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
+                            placeholder={isLocked ? "Disponível apenas na fase Fechado Ganho" : field.placeholder || ""}
+                            className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                              isLocked
+                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
+                                : "border-slate-300"
+                            }`}
+                          />
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
           )}

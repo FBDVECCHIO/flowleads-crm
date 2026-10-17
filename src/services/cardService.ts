@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.ts";
 import { AutomationEngine } from "./automationEngine.ts";
+import { maskPhone } from "../lib/utils.ts";
 
 export interface CreateCardInput {
   pipeId: string;
@@ -68,11 +69,13 @@ export class CardService {
       targetPhaseId = firstPhase.id;
     }
 
+    const cleanTitle = (input.title || "").trim().toUpperCase();
+
     const card = await prisma.card.create({
       data: {
         pipeId: input.pipeId,
         currentPhaseId: targetPhaseId,
-        title: input.title,
+        title: cleanTitle,
         dealValue: input.dealValue ?? 0,
         priority: input.priority ?? "MEDIUM",
         dueDate: input.dueDate ? new Date(input.dueDate) : null,
@@ -91,10 +94,16 @@ export class CardService {
       for (const [key, val] of Object.entries(input.fieldValues)) {
         const fieldId = fieldMap.get(key);
         if (fieldId && val !== undefined && val !== null && String(val).trim() !== "") {
+          let strVal = String(val).trim();
+          if (key.includes("phone")) {
+            strVal = maskPhone(strVal);
+          } else if (!key.includes("email") && !key.includes("url") && !key.includes("link")) {
+            strVal = strVal.toUpperCase();
+          }
           await prisma.cardFieldValue.upsert({
             where: { cardId_fieldId: { cardId: card.id, fieldId } },
-            create: { cardId: card.id, fieldId, value: String(val) },
-            update: { value: String(val) },
+            create: { cardId: card.id, fieldId, value: strVal },
+            update: { value: strVal },
           });
         }
       }
@@ -173,6 +182,24 @@ export class CardService {
       throw new Error(`Campos obrigatórios não preenchidos para avançar para a fase "${targetPhase.name}": ${names}`);
     }
 
+    // Regra de Negócio Ótica FlowLeads: Para movimentar o lead saindo da fase inicial para o próximo passo,
+    // é obrigatório que a Loja Negociada e a Data/Hora da Visita estejam preenchidos.
+    const isMovingOutOfInitial = (card.currentPhase.order === 1 || /novo/i.test(card.currentPhase.name)) &&
+      targetPhaseId !== card.currentPhaseId;
+
+    if (isMovingOutOfInitial) {
+      const allFields = await prisma.field.findMany({ where: { pipeId: card.pipeId } });
+      const storeField = allFields.find((f) => f.identifier === "store_negotiated");
+      const visitField = allFields.find((f) => f.identifier === "estimated_visit_datetime");
+
+      const hasStore = storeField && updatedValues.some((v) => v.fieldId === storeField.id && v.value && v.value.trim().length > 0);
+      const hasVisit = visitField && updatedValues.some((v) => v.fieldId === visitField.id && v.value && v.value.trim().length > 0);
+
+      if (!hasStore || !hasVisit) {
+        throw new Error("Para movimentar o lead para o próximo passo, é obrigatório preencher a Loja Negociada e a Data/Hora da Visita à Loja.");
+      }
+    }
+
     // Mover de fase
     const oldPhaseId = card.currentPhaseId;
     const oldPhaseName = card.currentPhase.name;
@@ -205,24 +232,37 @@ export class CardService {
     if (!title || typeof title !== "string" || !title.trim()) {
       throw new Error("Título do card não pode ser vazio.");
     }
+    const cleanTitle = title.trim().toUpperCase();
     await prisma.card.update({
       where: { id: cardId },
-      data: { title: title.trim() },
+      data: { title: cleanTitle },
     });
     await prisma.cardActivity.create({
       data: {
         cardId,
         userId,
         actionType: "FIELD_UPDATED",
-        details: `Card renomeado para "${title.trim()}".`,
+        details: `Card renomeado para "${cleanTitle}".`,
       },
     });
     return this.getCardById(cardId);
   }
 
   static async updateCardFields(cardId: string, fieldValues: Record<string, string>, userId?: string) {
-    const card = await prisma.card.findUnique({ where: { id: cardId } });
+    const card = await prisma.card.findUnique({
+      where: { id: cardId },
+      include: { currentPhase: true },
+    });
     if (!card) throw new Error("Card não encontrado.");
+
+    const closingFieldKeys = new Set(["os_number", "sale_amount", "seller_name", "sale_date"]);
+    const isWonPhase = Boolean(card.currentPhase?.isFinalWon || /ganho|fechado\s*ganho/i.test(card.currentPhase?.name || ""));
+
+    for (const [key, val] of Object.entries(fieldValues)) {
+      if (closingFieldKeys.has(key) && !isWonPhase && val !== undefined && val !== null && String(val).trim() !== "") {
+        throw new Error("Campos como número de OS, valor final, vendedor que atendeu e data da venda só podem ser preenchidos quando o lead fechar negócio.");
+      }
+    }
 
     const fields = await prisma.field.findMany({ where: { pipeId: card.pipeId } });
     const fieldMap = new Map(fields.map((f) => [f.identifier, f.id]));
@@ -251,10 +291,17 @@ export class CardService {
         }
       }
 
+      let strVal = String(val ?? "").trim();
+      if (key.includes("phone")) {
+        strVal = maskPhone(strVal);
+      } else if (!key.includes("email") && !key.includes("url") && !key.includes("link")) {
+        strVal = strVal.toUpperCase();
+      }
+
       await prisma.cardFieldValue.upsert({
         where: { cardId_fieldId: { cardId, fieldId } },
-        create: { cardId, fieldId, value: String(val ?? "") },
-        update: { value: String(val ?? "") },
+        create: { cardId, fieldId, value: strVal },
+        update: { value: strVal },
       });
 
       if (key === "sale_amount" || key === "deal_value" || key === "dealValue") {
@@ -324,6 +371,13 @@ export class CardService {
       }
     }
 
+    await prisma.cardFieldValue.deleteMany({ where: { cardId } });
+    await prisma.cardLabel.deleteMany({ where: { cardId } });
+    await prisma.cardAssignee.deleteMany({ where: { cardId } });
+    await prisma.cardChecklist.deleteMany({ where: { cardId } });
+    await prisma.cardComment.deleteMany({ where: { cardId } });
+    await prisma.cardActivity.deleteMany({ where: { cardId } });
+    await prisma.cardAttachment.deleteMany({ where: { cardId } });
     await prisma.card.delete({ where: { id: cardId } });
   }
 

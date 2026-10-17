@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AppShell } from "@/components/layout/AppShell";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, maskPhone } from "@/lib/utils";
 import { 
   Users, 
   UserPlus, 
@@ -76,10 +76,11 @@ export default function UsersPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const cacheBust = `?_t=${Date.now()}`;
       const [authRes, usersRes, pipesRes] = await Promise.all([
-        fetch("/api/auth/me"),
-        fetch("/api/users"),
-        fetch("/api/pipes"),
+        fetch(`/api/auth/me${cacheBust}`, { cache: "no-store" }),
+        fetch(`/api/users${cacheBust}`, { cache: "no-store" }),
+        fetch(`/api/pipes${cacheBust}`, { cache: "no-store" }),
       ]);
 
       const authData = await authRes.json();
@@ -171,6 +172,8 @@ export default function UsersPage() {
     try {
       const payload = {
         ...formData,
+        name: formData.name.trim().toUpperCase(),
+        whatsappNumber: formData.whatsappNumber ? maskPhone(formData.whatsappNumber) : null,
         allowedMenus: formData.allowedMenus.join(","),
       };
 
@@ -580,9 +583,9 @@ export default function UsersPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="Ex: +5511999998888 ou 11999998888"
+                    placeholder="Ex: (11) 99999-8888"
                     value={formData.whatsappNumber}
-                    onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, whatsappNumber: maskPhone(e.target.value) })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
                   />
                   <p className="text-[10px] text-slate-400 mt-1">
