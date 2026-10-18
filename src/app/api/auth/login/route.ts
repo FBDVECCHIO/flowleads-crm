@@ -7,14 +7,17 @@ import {
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
-    if (!email || !password) {
-      return Response.json({ error: "E-mail e senha são obrigatórios." }, { status: 400 });
+    const body = await req.json();
+    const identifier = body.username || body.email;
+    const password = body.password;
+
+    if (!identifier || !password) {
+      return Response.json({ error: "Usuário e senha são obrigatórios." }, { status: 400 });
     }
 
-    const user = await authenticateUser(email, password);
+    const user = await authenticateUser(identifier, password);
     if (!user) {
-      return Response.json({ error: "Credenciais inválidas." }, { status: 401 });
+      return Response.json({ error: "Usuário ou senha incorretos." }, { status: 401 });
     }
 
     // Controle de Jornada de Trabalho (Seg-Sex 08:00 às 18:00 America/Sao_Paulo)

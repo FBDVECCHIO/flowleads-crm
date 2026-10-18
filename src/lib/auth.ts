@@ -211,10 +211,20 @@ export async function requireAuth(req: Request, allowedRoles?: string[]): Promis
   return session;
 }
 
-export async function authenticateUser(email: string, passwordPlain: string): Promise<SessionUser | null> {
+export async function authenticateUser(identifier: string, passwordPlain: string): Promise<SessionUser | null> {
   await ensureDatabaseReady();
-  const user = await prisma.user.findUnique({
-    where: { email },
+  if (!identifier || !passwordPlain) return null;
+  const cleanId = identifier.trim().toLowerCase();
+
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: { equals: cleanId, mode: "insensitive" } },
+        { email: { equals: `${cleanId}@flowleads.com`, mode: "insensitive" } },
+        { email: { startsWith: `${cleanId}@`, mode: "insensitive" } },
+        { name: { equals: cleanId, mode: "insensitive" } },
+      ],
+    },
     include: { organization: true },
   });
 

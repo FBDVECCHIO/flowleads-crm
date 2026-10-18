@@ -95,20 +95,29 @@ export async function POST(req: Request) {
       return Response.json({ error: "Nome completo é obrigatório." }, { status: 400, headers: noStoreHeaders });
     }
 
-    if (!email || typeof email !== "string" || !email.includes("@")) {
-      return Response.json({ error: "E-mail comercial válido é obrigatório." }, { status: 400, headers: noStoreHeaders });
+    if (!email || typeof email !== "string" || !email.trim()) {
+      return Response.json({ error: "Usuário de acesso ou e-mail é obrigatório." }, { status: 400, headers: noStoreHeaders });
     }
+
+    const cleanInput = email.trim().toLowerCase();
+    const normalizedEmail = cleanInput.includes("@") ? cleanInput : `${cleanInput}@flowleads.com`;
 
     if (!password || typeof password !== "string" || password.length < 6) {
       return Response.json({ error: "Senha deve conter no mínimo 6 caracteres." }, { status: 400, headers: noStoreHeaders });
     }
 
-    // Check if email already exists
-    const existing = await prisma.user.findUnique({
-      where: { email: email.trim().toLowerCase() },
+    // Check if user/email already exists
+    const existing = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: { equals: normalizedEmail, mode: "insensitive" } },
+          { email: { equals: cleanInput, mode: "insensitive" } },
+          { email: { startsWith: `${cleanInput}@`, mode: "insensitive" } },
+        ],
+      },
     });
     if (existing) {
-      return Response.json({ error: "Já existe um usuário cadastrado com este e-mail." }, { status: 409, headers: noStoreHeaders });
+      return Response.json({ error: "Já existe um usuário cadastrado com este nome de acesso ou e-mail." }, { status: 409, headers: noStoreHeaders });
     }
 
     const orgId = session?.organizationId || (await prisma.organization.findFirst())?.id;
@@ -122,7 +131,7 @@ export async function POST(req: Request) {
       data: {
         organizationId: orgId,
         name: name.trim().toUpperCase(),
-        email: email.trim().toLowerCase(),
+        email: normalizedEmail,
         passwordHash,
         role: role.toUpperCase(),
         whatsappNumber: whatsappNumber ? maskPhone(String(whatsappNumber).trim()) : null,

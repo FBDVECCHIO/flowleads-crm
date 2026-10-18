@@ -75,7 +75,10 @@ export async function PATCH(
     const dataToUpdate: any = {};
 
     if (body.name !== undefined) dataToUpdate.name = String(body.name).trim().toUpperCase();
-    if (body.email !== undefined) dataToUpdate.email = String(body.email).trim().toLowerCase();
+    if (body.email !== undefined) {
+      const raw = String(body.email).trim().toLowerCase();
+      dataToUpdate.email = raw.includes("@") ? raw : `${raw}@flowleads.com`;
+    }
     if (body.role !== undefined) dataToUpdate.role = String(body.role).toUpperCase();
     if (body.whatsappNumber !== undefined) dataToUpdate.whatsappNumber = body.whatsappNumber ? String(body.whatsappNumber).trim() : null;
     if (body.monthlyTargetAmount !== undefined) dataToUpdate.monthlyTargetAmount = Number(body.monthlyTargetAmount) || 0;

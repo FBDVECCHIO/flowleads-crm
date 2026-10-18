@@ -19,7 +19,9 @@ import {
   Sparkles, 
   Check, 
   ExternalLink,
-  Layers
+  Layers,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 interface UserItem {
@@ -72,6 +74,7 @@ export default function UsersPage() {
     workEndTime: "18:00",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [showModalPassword, setShowModalPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -386,7 +389,11 @@ export default function UsersPage() {
                             </div>
                             <div className="flex flex-col">
                               <span className="font-bold text-slate-900">{u.name}</span>
-                              <span className="text-[11px] text-slate-400">{u.email}</span>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[11px] font-mono text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
+                                  login: {u.email.endsWith("@flowleads.com") ? u.email.replace("@flowleads.com", "") : u.email}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -545,7 +552,7 @@ export default function UsersPage() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-                {/* Linha 1: Nome e Email */}
+                {/* Linha 1: Nome e Usuário de Login */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">Nome Completo *</label>
@@ -560,15 +567,16 @@ export default function UsersPage() {
                   </div>
 
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">E-mail Comercial *</label>
+                    <label className="block font-bold text-slate-700 mb-1">Usuário de Login *</label>
                     <input
-                      type="email"
+                      type="text"
                       required
-                      placeholder="carlos@grupomarioneto.com.br"
+                      placeholder="Ex: carlos ou carlos@flowleads.com"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     />
+                    <span className="text-[10px] text-slate-400 mt-0.5 block">Nome usado para entrar no FlowLeads</span>
                   </div>
                 </div>
 
@@ -578,14 +586,28 @@ export default function UsersPage() {
                     <label className="block font-bold text-slate-700 mb-1">
                       {editingUser ? "Nova Senha (opcional)" : "Senha de Acesso *"}
                     </label>
-                    <input
-                      type="password"
-                      required={!editingUser}
-                      placeholder={editingUser ? "Deixe em branco para manter" : "Mínimo 6 caracteres"}
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showModalPassword ? "text" : "password"}
+                        required={!editingUser}
+                        placeholder={editingUser ? "Deixe em branco para manter" : "Mínimo 6 caracteres"}
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        className="w-full pl-3 pr-9 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowModalPassword(!showModalPassword)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                        title={showModalPassword ? "Cobrir senha" : "Ver senha"}
+                      >
+                        {showModalPassword ? (
+                          <EyeOff className="w-4 h-4 text-slate-600" />
+                        ) : (
+                          <Eye className="w-4 h-4 text-slate-400" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div>

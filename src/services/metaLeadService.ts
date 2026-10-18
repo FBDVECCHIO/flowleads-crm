@@ -121,32 +121,61 @@ export async function processMetaLead(
     throw new Error("Nenhuma fase inicial encontrada no Pipe.");
   }
 
-  // 3. Intelligent WhatsApp routing (F17 / F9)
+  // 3. Intelligent WhatsApp routing by commercial number
   let assignedToUserId: string | null = null;
-  const targetWhatsapp = overrideData?.destination_whatsapp;
+  let targetWhatsapp = overrideData?.destination_whatsapp;
+
+  // Se não foi enviado destination_whatsapp explícito, checar se o nome do anúncio ou do grupo contém telefone ou final
+  if (!targetWhatsapp && (overrideData?.adset_name || overrideData?.ad_name)) {
+    const combinedAdText = `${overrideData?.adset_name || ""} ${overrideData?.ad_name || ""}`;
+    const phoneRegex = /(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?(?:9?\d{4}[-\s]?\d{4})/g;
+    const foundPhones = combinedAdText.match(phoneRegex);
+    if (foundPhones && foundPhones.length > 0) {
+      targetWhatsapp = foundPhones[0];
+    }
+  }
 
   if (targetWhatsapp) {
     const cleanTarget = targetWhatsapp.replace(/\D/g, "");
     const allUsers = await prisma.user.findMany({
       where: { whatsappNumber: { not: null } },
     });
+
     const matchedRep = allUsers.find((u) => {
       if (!u.whatsappNumber) return false;
       const cleanU = u.whatsappNumber.replace(/\D/g, "");
-      return cleanU === cleanTarget || cleanU.endsWith(cleanTarget) || cleanTarget.endsWith(cleanU);
+      if (!cleanU || !cleanTarget) return false;
+
+      // 1. Igualdade exata de todos os dígitos
+      if (cleanU === cleanTarget) return true;
+
+      // 2. Um é sufixo exato do outro (ex: com ou sem DDI 55, com ou sem DDD)
+      if (cleanU.endsWith(cleanTarget) || cleanTarget.endsWith(cleanU)) return true;
+
+      // 3. Comparação dos últimos 8 ou 9 dígitos (núcleo do celular no Brasil)
+      if (cleanU.length >= 8 && cleanTarget.length >= 8) {
+        if (cleanU.slice(-8) === cleanTarget.slice(-8)) return true;
+        if (cleanU.slice(-9) === cleanTarget.slice(-9)) return true;
+      }
+
+      // 4. Suffix matching (ex: "final 45", "final 9945")
+      if (cleanTarget.length >= 2 && cleanU.endsWith(cleanTarget)) return true;
+
+      return false;
     });
+
     if (matchedRep) {
       assignedToUserId = matchedRep.id;
     }
   }
 
-  // If no direct WhatsApp match, check default supervisor or unassigned
+  // Se não houver correspondência exata de vendedor, atribui ao Supervisor para triagem e notificação
   if (!assignedToUserId) {
-    const fallbackRep = await prisma.user.findFirst({
-      where: { role: "MEMBER" },
+    const supervisor = await prisma.user.findFirst({
+      where: { role: { in: ["SUPERVISOR", "ADMIN"] } },
     });
-    if (fallbackRep) {
-      assignedToUserId = fallbackRep.id;
+    if (supervisor) {
+      assignedToUserId = supervisor.id;
     }
   }
 
@@ -273,6 +302,7 @@ export async function processMetaLead(
     data: {
       cardId: card.id,
       userId: assignedToUserId || undefined,
+      authorName: "Meta Ads System",
       content: `🎯 DADOS DE ORIGEM DO ANÚNCIO (META ADS):\n• Ciclo / Campanha: ${campaignInfo}\n• Grupo de Anúncios: ${adsetInfo}\n• Anúncio / Criativo: ${adInfo}\n• Plataforma de Exibição: ${platformInfo}\n• Formulário: ${formInfo}\n• Lead ID Meta: ${leadgenId}`,
     },
   }).catch(() => {});
