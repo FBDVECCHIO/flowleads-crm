@@ -201,9 +201,36 @@ export async function processMetaLead(
     }
   }
 
-  // Auto-vincular checklist padrão cadastrado pelo Supervisor
+  // Auto-vincular checklist padrão cadastrado pelo Supervisor e auto-espelhar campanha
   const org = await prisma.organization.findFirst();
   if (org) {
+    // 1. Auto-espelhar campanha da Meta Ads na Central de Cadastros
+    const rawCampName = (overrideData?.campaign_name || overrideData?.campaign_id)?.trim().toUpperCase();
+    if (rawCampName) {
+      try {
+        const existingCamp = await prisma.campaign.findFirst({
+          where: {
+            organizationId: org.id,
+            name: rawCampName,
+          },
+        });
+        if (!existingCamp) {
+          await prisma.campaign.create({
+            data: {
+              organizationId: org.id,
+              name: rawCampName,
+              description: `[META ADS ID: ${overrideData?.campaign_id || leadgenId.slice(-6)}] Status: ACTIVE • Ingerida via anúncio Meta Ads`,
+              isActive: true,
+              products: '["lente","armação","óculos completo"]',
+            },
+          });
+        }
+      } catch {
+        // Ignora para não impedir criação do lead
+      }
+    }
+
+    // 2. Auto-vincular checklist padrão
     const standardItems = await prisma.checklistItem.findMany({
       where: { organizationId: org.id, isActive: true },
       orderBy: [{ order: "asc" }, { createdAt: "asc" }],

@@ -16,7 +16,41 @@ export async function GET() {
     const campaigns = await prisma.campaign.findMany({
       orderBy: { createdAt: "desc" },
     });
-    return Response.json(campaigns, { status: 200, headers: noStoreHeaders });
+
+    // Calcular crosscheck: contagem de leads vinculados a cada campanha
+    const campaignField = await prisma.field.findFirst({
+      where: {
+        OR: [
+          { identifier: { contains: "campanha" } },
+          { identifier: { contains: "campaign" } },
+        ],
+      },
+    });
+
+    const leadCountMap: Record<string, number> = {};
+    if (campaignField) {
+      const fieldValues = await prisma.cardFieldValue.findMany({
+        where: { fieldId: campaignField.id },
+        select: { value: true },
+      });
+      for (const fv of fieldValues) {
+        const val = fv.value?.trim().toUpperCase();
+        if (val) {
+          leadCountMap[val] = (leadCountMap[val] || 0) + 1;
+        }
+      }
+    }
+
+    const campaignsWithCounts = campaigns.map((c) => {
+      const normalizedName = c.name.trim().toUpperCase();
+      const count = leadCountMap[normalizedName] || 0;
+      return {
+        ...c,
+        leadCount: count,
+      };
+    });
+
+    return Response.json(campaignsWithCounts, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
     return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });
   }
