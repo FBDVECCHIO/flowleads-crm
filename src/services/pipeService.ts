@@ -1,7 +1,9 @@
 import { prisma } from "../lib/prisma.ts";
+import { persistDatabase, ensureDatabaseReady } from "../lib/dbSync.ts";
 
 export class PipeService {
   static async listPipes(organizationId?: string) {
+    await ensureDatabaseReady();
     const where = organizationId ? { organizationId } : {};
     return prisma.pipe.findMany({
       where,
@@ -19,6 +21,7 @@ export class PipeService {
   }
 
   static async getPipeById(pipeId: string) {
+    await ensureDatabaseReady();
     return prisma.pipe.findUnique({
       where: { id: pipeId },
       include: {
@@ -86,7 +89,7 @@ export class PipeService {
       }
     }
 
-    return prisma.phase.create({
+    const newPhase = await prisma.phase.create({
       data: {
         pipeId,
         name: cleanName,
@@ -94,6 +97,8 @@ export class PipeService {
         color,
       },
     });
+    await persistDatabase();
+    return newPhase;
   }
 
   static async updatePhase(phaseId: string, data: { name?: string; color?: string }) {
@@ -108,10 +113,12 @@ export class PipeService {
     if (data.name) updateData.name = data.name.trim().toUpperCase();
     if (data.color) updateData.color = data.color;
 
-    return prisma.phase.update({
+    const updated = await prisma.phase.update({
       where: { id: phaseId },
       data: updateData,
     });
+    await persistDatabase();
+    return updated;
   }
 
   static async deletePhase(phaseId: string) {
@@ -135,7 +142,9 @@ export class PipeService {
       });
     }
 
-    return prisma.phase.delete({ where: { id: phaseId } });
+    const deleted = await prisma.phase.delete({ where: { id: phaseId } });
+    await persistDatabase();
+    return deleted;
   }
 
   static async reorderPhases(pipeId: string, orderedPhaseIds: string[]) {
@@ -195,6 +204,7 @@ export class PipeService {
         })
       )
     );
+    await persistDatabase();
 
     return prisma.phase.findMany({
       where: { pipeId },

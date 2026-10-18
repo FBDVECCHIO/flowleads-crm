@@ -1,4 +1,5 @@
 import { prisma } from "../../../../lib/prisma.ts";
+import { persistDatabase, ensureDatabaseReady } from "../../../../lib/dbSync.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -14,6 +15,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    await ensureDatabaseReady();
     const resolvedParams = await Promise.resolve(params);
     const body = await req.json();
 
@@ -30,6 +32,7 @@ export async function PUT(
       data,
     });
 
+    await persistDatabase();
     return Response.json(updated, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
     return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });
@@ -48,6 +51,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    await ensureDatabaseReady();
     const resolvedParams = await Promise.resolve(params);
     const labelId = resolvedParams.id;
 
@@ -60,6 +64,7 @@ export async function DELETE(
       }),
     ]);
 
+    await persistDatabase();
     return Response.json({ success: true }, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
     return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });

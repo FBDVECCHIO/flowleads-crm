@@ -11,6 +11,9 @@ function getDatabaseUrl(): string {
   if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
     const tmpDbPath = path.join("/tmp", "dev.db");
     if (!fs.existsSync(tmpDbPath)) {
+      try {
+        fs.mkdirSync(path.dirname(tmpDbPath), { recursive: true });
+      } catch {}
       const candidates = [
         path.join(process.cwd(), "prisma", "dev.db"),
         path.join(process.cwd(), "dev.db"),

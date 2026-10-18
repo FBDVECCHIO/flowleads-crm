@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useRef } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { KanbanColumn } from "@/components/kanban/KanbanColumn";
 import { CardDrawer } from "@/components/card/CardDrawer";
@@ -30,6 +30,11 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
 
   // Checklist State
   const [standardChecklists, setStandardChecklists] = useState<any[]>([]);
+
+  // Tracking refs to prevent stale server responses from reverting optimistic updates
+  const deletedCardIdsRef = useRef<Set<string>>(new Set());
+  const movedCardsRef = useRef<Map<string, { phaseId: string; timestamp: number }>>(new Map());
+  const renamedCardsRef = useRef<Map<string, string>>(new Map());
 
   // New Column / Phase Modal State
   const [isNewPhaseModalOpen, setIsNewPhaseModalOpen] = useState(false);
@@ -82,7 +87,44 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
       const campData = campRes.ok ? await campRes.json() : [];
       const chkData = chkRes.ok ? await chkRes.json() : [];
 
-      setCards(Array.isArray(cData) ? cData : []);
+      let cardsList = Array.isArray(cData) ? cData : [];
+      // Clean up deletedCardIdsRef once server list confirms deletion
+      for (const delId of Array.from(deletedCardIdsRef.current)) {
+        if (!cData.some((c: any) => c.id === delId)) {
+          deletedCardIdsRef.current.delete(delId);
+        }
+      }
+      cardsList = cardsList.filter((c: any) => !deletedCardIdsRef.current.has(c.id));
+      const now = Date.now();
+      cardsList = cardsList.map((c: any) => {
+        let title = c.title;
+        let currentPhaseId = c.currentPhaseId;
+        if (renamedCardsRef.current.has(c.id)) {
+          const refTitle = renamedCardsRef.current.get(c.id)!;
+          if (c.title === refTitle) {
+            renamedCardsRef.current.delete(c.id);
+          } else {
+            title = refTitle;
+          }
+        }
+        if (movedCardsRef.current.has(c.id)) {
+          const moveInfo = movedCardsRef.current.get(c.id)!;
+          if (c.currentPhaseId === moveInfo.phaseId) {
+            movedCardsRef.current.delete(c.id);
+          } else if (now - moveInfo.timestamp < 15000) {
+            currentPhaseId = moveInfo.phaseId;
+          } else {
+            movedCardsRef.current.delete(c.id);
+          }
+        }
+        return {
+          ...c,
+          title,
+          currentPhaseId,
+        };
+      });
+
+      setCards(cardsList);
       setLabels(Array.isArray(lData) ? lData : []);
       if (aData?.user) setCurrentUser(aData.user);
       setStores(Array.isArray(sData) ? sData : []);
@@ -101,7 +143,22 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
 
   const handleRenameCard = async (cardId: string, title: string) => {
     const cleanTitle = title.trim().toUpperCase();
-    setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, title: cleanTitle } : c)));
+    renamedCardsRef.current.set(cardId, cleanTitle);
+    setCards((prev) =>
+      prev.map((c) =>
+        c.id === cardId
+          ? {
+              ...c,
+              title: cleanTitle,
+              values: (c.values || []).map((v: any) =>
+                ["lead_name", "name", "nome", "cliente"].includes((v.field?.identifier || "").toLowerCase())
+                  ? { ...v, value: cleanTitle }
+                  : v
+              ),
+            }
+          : c
+      )
+    );
     if (selectedCard && selectedCard.id === cardId) {
       setSelectedCard((prev: any) => ({ ...prev, title: cleanTitle }));
     }
@@ -112,6 +169,7 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
         body: JSON.stringify({ title: cleanTitle }),
       });
       if (!res.ok) {
+        renamedCardsRef.current.delete(cardId);
         const err = await res.json();
         alert(err.error || "Erro ao renomear card.");
         await fetchData();
@@ -120,6 +178,7 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
       await fetchData();
     } catch (err) {
       console.error(err);
+      renamedCardsRef.current.delete(cardId);
       await fetchData();
     }
   };
@@ -144,6 +203,7 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
 
   const handleDeleteCard = async (cardId: string) => {
     if (!confirm("Deseja realmente excluir este lead permanentemente?")) return;
+    deletedCardIdsRef.current.add(cardId);
     setCards((prev) => prev.filter((c) => c.id !== cardId));
     if (selectedCard && selectedCard.id === cardId) {
       setSelectedCard(null);
@@ -153,6 +213,7 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
         method: "DELETE",
       });
       if (!res.ok) {
+        deletedCardIdsRef.current.delete(cardId);
         const data = await res.json();
         alert(data.error || "Erro ao excluir o card.");
         await fetchData();
@@ -161,6 +222,7 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
       await fetchData();
     } catch (err) {
       console.error(err);
+      deletedCardIdsRef.current.delete(cardId);
       await fetchData();
     }
   };
@@ -193,7 +255,8 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
   };
 
   const handleMoveCard = async (cardId: string, targetPhaseId: string, fieldValues?: Record<string, string>) => {
-    // Otimistic update
+    // Optimistic update
+    movedCardsRef.current.set(cardId, { phaseId: targetPhaseId, timestamp: Date.now() });
     setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, currentPhaseId: targetPhaseId } : c)));
 
     try {
@@ -204,17 +267,28 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
       });
       const updated = await res.json();
       if (!res.ok) {
-        alert(updated.error || "Erro ao mover card.");
+        movedCardsRef.current.delete(cardId);
+        const card = cards.find((c) => c.id === cardId) || selectedCard;
+        if (card && updated.error?.includes("Campos obrigatórios")) {
+          alert(updated.error);
+          handleOpenCard(card, "fields");
+        } else {
+          alert(updated.error || "Erro ao mover card.");
+        }
         await fetchData();
         return;
       }
 
-      await fetchData();
+      setCards((prev) =>
+        prev.map((c) => (c.id === cardId ? { ...c, ...updated, currentPhaseId: targetPhaseId } : c))
+      );
       if (selectedCard && selectedCard.id === cardId) {
         setSelectedCard(updated);
       }
+      await fetchData();
     } catch (err) {
       console.error(err);
+      movedCardsRef.current.delete(cardId);
       await fetchData();
     }
   };
@@ -316,6 +390,13 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
   };
 
   const handleUpdateFields = async (cardId: string, fieldValues: Record<string, string>) => {
+    if (fieldValues.lead_name && fieldValues.lead_name.trim()) {
+      const cleanTitle = fieldValues.lead_name.trim().toUpperCase();
+      renamedCardsRef.current.set(cardId, cleanTitle);
+      setCards((prev) =>
+        prev.map((c) => (c.id === cardId ? { ...c, title: cleanTitle } : c))
+      );
+    }
     const res = await fetch(`/api/cards/${cardId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },

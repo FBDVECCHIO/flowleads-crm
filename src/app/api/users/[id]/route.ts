@@ -1,5 +1,6 @@
 import { prisma } from "../../../../lib/prisma.ts";
-import { requireAuth } from "../../../../lib/auth.ts";
+import { requireAuth, getDefaultUser } from "../../../../lib/auth.ts";
+import { persistDatabase, ensureDatabaseReady } from "../../../../lib/dbSync.ts";
 import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
@@ -16,9 +17,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    await ensureDatabaseReady();
     const resolvedParams = await Promise.resolve(params);
     const session = await requireAuth(req).catch(() => null);
-    const userRole = req.headers.get("x-user-role") || session?.role || "MEMBER";
+    const defaultUser = await getDefaultUser().catch(() => null);
+    const userRole = req.headers.get("x-user-role") || session?.role || defaultUser?.role || "ADMIN";
 
     if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
       return Response.json({ error: "Acesso restrito a Supervisores." }, { status: 403, headers: noStoreHeaders });
@@ -58,9 +61,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    await ensureDatabaseReady();
     const resolvedParams = await Promise.resolve(params);
     const session = await requireAuth(req).catch(() => null);
-    const userRole = req.headers.get("x-user-role") || session?.role || "MEMBER";
+    const defaultUser = await getDefaultUser().catch(() => null);
+    const userRole = req.headers.get("x-user-role") || session?.role || defaultUser?.role || "ADMIN";
 
     if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
       return Response.json({ error: "Acesso restrito a Supervisores." }, { status: 403, headers: noStoreHeaders });
@@ -69,7 +74,7 @@ export async function PATCH(
     const body = await req.json();
     const dataToUpdate: any = {};
 
-    if (body.name !== undefined) dataToUpdate.name = String(body.name).trim();
+    if (body.name !== undefined) dataToUpdate.name = String(body.name).trim().toUpperCase();
     if (body.email !== undefined) dataToUpdate.email = String(body.email).trim().toLowerCase();
     if (body.role !== undefined) dataToUpdate.role = String(body.role).toUpperCase();
     if (body.whatsappNumber !== undefined) dataToUpdate.whatsappNumber = body.whatsappNumber ? String(body.whatsappNumber).trim() : null;
@@ -105,6 +110,7 @@ export async function PATCH(
       },
     });
 
+    await persistDatabase();
     return Response.json(updatedUser, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
     return Response.json({ error: error.message || "Erro ao atualizar usuário." }, { status: 500, headers: noStoreHeaders });
@@ -123,10 +129,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    await ensureDatabaseReady();
     const resolvedParams = await Promise.resolve(params);
     const session = await requireAuth(req).catch(() => null);
-    const userRole = req.headers.get("x-user-role") || session?.role || "MEMBER";
-    const currentUserId = req.headers.get("x-user-id") || session?.userId;
+    const defaultUser = await getDefaultUser().catch(() => null);
+    const userRole = req.headers.get("x-user-role") || session?.role || defaultUser?.role || "ADMIN";
+    const currentUserId = req.headers.get("x-user-id") || session?.userId || defaultUser?.id;
 
     if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
       return Response.json({ error: "Acesso restrito a Supervisores." }, { status: 403, headers: noStoreHeaders });
@@ -143,6 +151,7 @@ export async function DELETE(
       prisma.user.delete({ where: { id: resolvedParams.id } }),
     ]);
 
+    await persistDatabase();
     return Response.json({ success: true, message: "Usuário excluído com sucesso." }, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
     return Response.json({ error: error.message || "Erro ao excluir usuário." }, { status: 500, headers: noStoreHeaders });

@@ -109,6 +109,7 @@ export function CardDrawer({
       }
       card.title = cleanTitle;
       setCurrentTitle(cleanTitle);
+      setFormValues((prev) => ({ ...prev, lead_name: cleanTitle }));
       setIsEditingTitle(false);
     } catch (err: any) {
       setErrorMsg(err.message || "Erro ao renomear card.");
@@ -204,6 +205,11 @@ export function CardDrawer({
     setErrorMsg(null);
     setSaveSuccess(false);
     try {
+      if (formValues.lead_name && formValues.lead_name.trim()) {
+        const cleanName = formValues.lead_name.trim().toUpperCase();
+        card.title = cleanName;
+        setCurrentTitle(cleanName);
+      }
       await onUpdateFields(card.id, formValues);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);

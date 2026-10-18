@@ -1,6 +1,7 @@
 import { CardService, deleteCard, updateCardColor, moveCard, updateCardFields, updateCardTitle, getCardById } from "../../../../services/cardService.ts";
 import { prisma } from "../../../../lib/prisma.ts";
 import { requireAuth } from "../../../../lib/auth.ts";
+import { persistDatabase } from "../../../../lib/dbSync.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -65,6 +66,7 @@ export async function PATCH(
         where: { id: resolvedParams.id },
         data: { dealValue: val },
       });
+      await persistDatabase();
       const updated = await getCardById(resolvedParams.id);
       return Response.json(updated, { status: 200, headers: noStoreHeaders });
     }

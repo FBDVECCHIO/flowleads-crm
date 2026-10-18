@@ -1,5 +1,6 @@
 import { prisma } from "../../../lib/prisma.ts";
 import { maskPhone } from "../../../lib/utils.ts";
+import { persistDatabase, ensureDatabaseReady } from "../../../lib/dbSync.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,6 +13,7 @@ const noStoreHeaders = {
 
 export async function GET(req: Request) {
   try {
+    await ensureDatabaseReady();
     const { searchParams } = new URL(req.url);
     const storeId = searchParams.get("storeId");
 
@@ -31,6 +33,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    await ensureDatabaseReady();
     const body = await req.json();
     if (!body.name || !body.name.trim()) {
       return Response.json({ error: "Nome do vendedor/captador é obrigatório." }, { status: 400, headers: noStoreHeaders });
@@ -51,6 +54,7 @@ export async function POST(req: Request) {
       include: { store: true },
     });
 
+    await persistDatabase();
     return Response.json(seller, { status: 201, headers: noStoreHeaders });
   } catch (error: any) {
     return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });

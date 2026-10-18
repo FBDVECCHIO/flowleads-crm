@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.ts";
+import { persistDatabase, ensureDatabaseReady } from "../lib/dbSync.ts";
 import { AutomationEngine } from "./automationEngine.ts";
 import { maskPhone } from "../lib/utils.ts";
 
@@ -15,6 +16,7 @@ export interface CreateCardInput {
 
 export class CardService {
   static async listCards(pipeId: string, phaseId?: string) {
+    await ensureDatabaseReady();
     const where: any = { pipeId };
     if (phaseId) where.currentPhaseId = phaseId;
 
@@ -37,6 +39,7 @@ export class CardService {
   }
 
   static async getCardById(cardId: string) {
+    await ensureDatabaseReady();
     return prisma.card.findUnique({
       where: { id: cardId },
       include: {
@@ -61,6 +64,7 @@ export class CardService {
   }
 
   static async createCard(input: CreateCardInput) {
+    await ensureDatabaseReady();
     let targetPhaseId = input.phaseId;
     if (!targetPhaseId) {
       const firstPhase = await prisma.phase.findFirst({
@@ -155,6 +159,7 @@ export class CardService {
     // Disparar automações de criação de card em segundo plano
     await AutomationEngine.triggerCardCreated(card.id);
 
+    await persistDatabase();
     return this.getCardById(card.id);
   }
 
@@ -164,6 +169,7 @@ export class CardService {
     fieldValuesToFulfill?: Record<string, string>,
     userId?: string
   ) {
+    await ensureDatabaseReady();
     const card = await prisma.card.findUnique({
       where: { id: cardId },
       include: {
@@ -241,18 +247,34 @@ export class CardService {
     // Disparar automações de movimentação
     await AutomationEngine.triggerCardMoved(cardId, oldPhaseId, targetPhaseId);
 
+    await persistDatabase();
     return this.getCardById(cardId);
   }
 
   static async updateCardTitle(cardId: string, title: string, userId?: string) {
+    await ensureDatabaseReady();
     if (!title || typeof title !== "string" || !title.trim()) {
       throw new Error("Título do card não pode ser vazio.");
     }
     const cleanTitle = title.trim().toUpperCase();
-    await prisma.card.update({
+    const card = await prisma.card.update({
       where: { id: cardId },
       data: { title: cleanTitle },
+      include: { pipe: { include: { fields: true } } },
     });
+
+    // Sincronizar CardFieldValue para lead_name / name / nome / cliente para evitar regressão ao re-buscar dados
+    const nameFields = (card.pipe?.fields || []).filter((f) =>
+      ["lead_name", "name", "nome", "cliente"].includes(f.identifier.toLowerCase())
+    );
+    for (const nameField of nameFields) {
+      await prisma.cardFieldValue.upsert({
+        where: { cardId_fieldId: { cardId, fieldId: nameField.id } },
+        create: { cardId, fieldId: nameField.id, value: cleanTitle },
+        update: { value: cleanTitle },
+      }).catch(() => {});
+    }
+
     await prisma.cardActivity.create({
       data: {
         cardId,
@@ -261,6 +283,8 @@ export class CardService {
         details: `Card renomeado para "${cleanTitle}".`,
       },
     });
+
+    await persistDatabase();
     return this.getCardById(cardId);
   }
 
@@ -351,6 +375,7 @@ export class CardService {
       },
     });
 
+    await persistDatabase();
     return this.getCardById(cardId);
   }
 
@@ -373,10 +398,12 @@ export class CardService {
       },
     });
 
+    await persistDatabase();
     return comment;
   }
 
   static async deleteCard(cardId: string, userId?: string, userRole?: string): Promise<void> {
+    await ensureDatabaseReady();
     const card = await prisma.card.findUnique({ where: { id: cardId } });
     if (!card) {
       const error: any = new Error("Card não encontrado.");
@@ -384,33 +411,39 @@ export class CardService {
       throw error;
     }
 
-    // Cascading deletion of all card dependencies
+    // Cascading deletion of all card dependencies atomically
+    await prisma.$transaction([
+      prisma.cardFieldValue.deleteMany({ where: { cardId } }),
+      prisma.cardLabel.deleteMany({ where: { cardId } }),
+      prisma.cardAssignee.deleteMany({ where: { cardId } }),
+      prisma.cardChecklist.deleteMany({ where: { cardId } }),
+      prisma.cardComment.deleteMany({ where: { cardId } }),
+      prisma.cardActivity.deleteMany({ where: { cardId } }),
+      prisma.cardAttachment.deleteMany({ where: { cardId } }),
+      prisma.emailOutbox.deleteMany({ where: { cardId } }),
+      prisma.card.delete({ where: { id: cardId } }),
+    ]);
 
-    await prisma.cardFieldValue.deleteMany({ where: { cardId } });
-    await prisma.cardLabel.deleteMany({ where: { cardId } });
-    await prisma.cardAssignee.deleteMany({ where: { cardId } });
-    await prisma.cardChecklist.deleteMany({ where: { cardId } });
-    await prisma.cardComment.deleteMany({ where: { cardId } });
-    await prisma.cardActivity.deleteMany({ where: { cardId } });
-    await prisma.cardAttachment.deleteMany({ where: { cardId } });
-    await prisma.emailOutbox.deleteMany({ where: { cardId } }).catch(() => {});
-    await prisma.card.delete({ where: { id: cardId } });
+    await persistDatabase();
   }
 
   static async updateCardColor(cardId: string, color: string) {
     if (!/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(color)) {
       throw new Error("Cor hexadecimal inválida.");
     }
-    return prisma.card.update({
+    const res = await prisma.card.update({
       where: { id: cardId },
       data: { color },
     });
+    await persistDatabase();
+    return res;
   }
 
   static async addCardAttachment(
     cardId: string,
     fileData: { fileName: string; fileUrl: string; mimeType: string; sizeBytes: number }
   ) {
+    await ensureDatabaseReady();
     const card = await prisma.card.findUnique({ where: { id: cardId } });
     if (!card) throw new Error("Card não encontrado.");
 
@@ -432,6 +465,7 @@ export class CardService {
       },
     });
 
+    await persistDatabase();
     return attachment;
   }
 }

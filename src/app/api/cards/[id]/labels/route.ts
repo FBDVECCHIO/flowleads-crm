@@ -1,4 +1,5 @@
 import { prisma } from "../../../../../lib/prisma.ts";
+import { persistDatabase, ensureDatabaseReady } from "../../../../../lib/dbSync.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -14,6 +15,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    await ensureDatabaseReady();
     const resolvedParams = await Promise.resolve(params);
     const cardLabels = await prisma.cardLabel.findMany({
       where: { cardId: resolvedParams.id },
@@ -30,6 +32,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    await ensureDatabaseReady();
     const resolvedParams = await Promise.resolve(params);
     const body = await req.json();
     const { labelId } = body;
@@ -59,6 +62,8 @@ export async function POST(
         },
       });
     }
+
+    await persistDatabase();
 
     const updatedCard = await prisma.card.findUnique({
       where: { id: resolvedParams.id },

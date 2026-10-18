@@ -1,6 +1,7 @@
 import { prisma } from "./prisma.ts";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
+import { ensureDatabaseReady } from "./dbSync.ts";
 
 export interface SessionUser {
   id: string;
@@ -211,6 +212,7 @@ export async function requireAuth(req: Request, allowedRoles?: string[]): Promis
 }
 
 export async function authenticateUser(email: string, passwordPlain: string): Promise<SessionUser | null> {
+  await ensureDatabaseReady();
   const user = await prisma.user.findUnique({
     where: { email },
     include: { organization: true },
@@ -239,6 +241,7 @@ export async function authenticateUser(email: string, passwordPlain: string): Pr
 }
 
 export async function getDefaultUser(): Promise<SessionUser> {
+  await ensureDatabaseReady();
   const user = await prisma.user.findFirst({
     include: { organization: true },
   });

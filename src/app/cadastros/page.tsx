@@ -394,6 +394,11 @@ export default function CadastrosPage() {
       if (!res.ok) throw new Error(data.error || "Erro ao salvar campanha.");
       showSuccess(editingItem ? "Campanha atualizada com sucesso!" : "Campanha Meta Ads cadastrada!");
       setModalType(null);
+      if (editingItem) {
+        setCampaigns((prev) => prev.map((c) => (c.id === data.id ? data : c)));
+      } else {
+        setCampaigns((prev) => [data, ...prev]);
+      }
       await fetchData();
     } catch (err: any) {
       showError(err.message);
@@ -404,12 +409,18 @@ export default function CadastrosPage() {
 
   const handleDeleteCampaign = async (id: string, name: string) => {
     if (!confirm(`Deseja realmente remover a campanha "${name}"?`)) return;
+    const previous = [...campaigns];
+    setCampaigns((prev) => prev.filter((c) => c.id !== id));
     try {
       const res = await fetch(`/api/campaigns/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Erro ao remover campanha.");
+      if (!res.ok) {
+        setCampaigns(previous);
+        throw new Error("Erro ao remover campanha.");
+      }
       showSuccess("Campanha removida!");
       await fetchData();
     } catch (err: any) {
+      setCampaigns(previous);
       showError(err.message);
     }
   };

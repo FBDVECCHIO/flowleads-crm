@@ -54,6 +54,10 @@ export function CardContextMenu({
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setRenamedTitle(card.title || "");
+  }, [card.title]);
+
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsOpen(false);

@@ -1,4 +1,5 @@
 import { prisma } from "../../../lib/prisma.ts";
+import { persistDatabase, ensureDatabaseReady } from "../../../lib/dbSync.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,6 +12,7 @@ const noStoreHeaders = {
 
 export async function GET() {
   try {
+    await ensureDatabaseReady();
     const campaigns = await prisma.campaign.findMany({
       orderBy: { createdAt: "desc" },
     });
@@ -22,6 +24,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    await ensureDatabaseReady();
     const body = await req.json();
     if (!body.name || !body.name.trim()) {
       return Response.json({ error: "Nome da campanha é obrigatório." }, { status: 400, headers: noStoreHeaders });
@@ -44,6 +47,7 @@ export async function POST(req: Request) {
       },
     });
 
+    await persistDatabase();
     return Response.json(campaign, { status: 201, headers: noStoreHeaders });
   } catch (error: any) {
     return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });

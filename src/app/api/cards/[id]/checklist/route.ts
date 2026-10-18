@@ -1,4 +1,5 @@
 import { prisma } from "../../../../../lib/prisma.ts";
+import { persistDatabase, ensureDatabaseReady } from "../../../../../lib/dbSync.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,6 +12,7 @@ const noStoreHeaders = {
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await ensureDatabaseReady();
     const { id: cardId } = await params;
     const { checklistId, itemId, completed } = await req.json();
 
@@ -53,6 +55,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       data: { items: JSON.stringify(updatedItems) },
     });
 
+    await persistDatabase();
     return Response.json(updated, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
     return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });

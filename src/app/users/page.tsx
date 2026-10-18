@@ -188,6 +188,7 @@ export default function UsersPage() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Erro ao atualizar usuário.");
+        setUsers((prev) => prev.map((u) => (u.id === data.id ? { ...u, ...data } : u)));
         setSuccessMessage("Usuário atualizado com sucesso!");
       } else {
         // POST
@@ -198,6 +199,7 @@ export default function UsersPage() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Erro ao cadastrar usuário.");
+        setUsers((prev) => [...prev, data]);
         setSuccessMessage("Usuário cadastrado com sucesso!");
       }
 
@@ -217,14 +219,21 @@ export default function UsersPage() {
       return;
     }
 
+    const previousUsers = [...users];
+    setUsers((prev) => prev.filter((u) => u.id !== user.id));
+
     try {
       const res = await fetch(`/api/users/${user.id}`, {
         method: "DELETE",
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erro ao remover usuário.");
+      if (!res.ok) {
+        setUsers(previousUsers);
+        throw new Error(data.error || "Erro ao remover usuário.");
+      }
       await fetchData();
     } catch (err: any) {
+      setUsers(previousUsers);
       alert(err.message);
     }
   };

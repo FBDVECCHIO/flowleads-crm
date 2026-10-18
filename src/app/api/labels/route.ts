@@ -1,5 +1,6 @@
 import { prisma } from "../../../lib/prisma.ts";
 import { requireAuth } from "../../../lib/auth.ts";
+import { persistDatabase, ensureDatabaseReady } from "../../../lib/dbSync.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,6 +13,7 @@ const noStoreHeaders = {
 
 export async function GET(req: Request) {
   try {
+    await ensureDatabaseReady();
     const { searchParams } = new URL(req.url);
     const pipeId = searchParams.get("pipeId");
 
@@ -30,6 +32,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    await ensureDatabaseReady();
     // Check authorization: support x-user-role header or session cookie
     const headerRole = req.headers.get("x-user-role");
     let role = headerRole;
@@ -84,6 +87,7 @@ export async function POST(req: Request) {
       },
     });
 
+    await persistDatabase();
     return Response.json(label, { status: 201, headers: noStoreHeaders });
   } catch (error: any) {
     return Response.json({ error: error.message || "Erro ao criar etiqueta." }, { status: 500, headers: noStoreHeaders });

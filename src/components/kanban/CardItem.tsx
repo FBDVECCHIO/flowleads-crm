@@ -58,6 +58,7 @@ export function CardItem({
 
   const handleDragStart = (e: React.DragEvent) => {
     isDraggingRef.current = true;
+    e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", JSON.stringify({ cardId: card.id, sourcePhaseId: card.currentPhaseId }));
   };
 
@@ -89,7 +90,8 @@ export function CardItem({
     return "";
   };
 
-  const clientName = (getValue("lead_name", "name", "nome", "cliente") || card.title || "LEAD SEM NOME").toUpperCase();
+  const leadNameField = getValue("lead_name", "name", "nome", "cliente");
+  const clientName = (card.title?.trim() || leadNameField || "LEAD SEM NOME").toUpperCase();
   const rawPhone = getValue("lead_phone", "whatsapp", "phone", "telefone", "celular");
   const clientPhone = rawPhone ? maskPhone(rawPhone) : "NÃO INFORMADO";
   const cleanPhoneDigits = rawPhone.replace(/\D/g, "");

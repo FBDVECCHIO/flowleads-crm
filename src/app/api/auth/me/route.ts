@@ -1,5 +1,6 @@
 import { getDefaultUser, verifySession } from "../../../../lib/auth.ts";
 import { prisma } from "../../../../lib/prisma.ts";
+import { ensureDatabaseReady } from "../../../../lib/dbSync.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,6 +13,7 @@ const noStoreHeaders = {
 
 export async function GET(req: Request) {
   try {
+    await ensureDatabaseReady();
     const cookieHeader = req.headers.get("cookie") || "";
     let token: string | null = null;
     const match = cookieHeader.match(/flowleads_session=([^;]+)/);

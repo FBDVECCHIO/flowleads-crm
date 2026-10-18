@@ -84,10 +84,18 @@ export function KanbanColumn({
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     try {
       const phaseDragId = e.dataTransfer.getData("application/phase-id");
       if (phaseDragId && phaseDragId !== phase.id && !isImmutable && onReorderPhases) {
@@ -258,7 +266,12 @@ export function KanbanColumn({
         <span className="font-semibold text-slate-700">{formatCurrency(totalValue)}</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2.5 space-y-2 min-h-[150px]">
+      <div
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDrop={handleDrop}
+        className="flex-1 overflow-y-auto p-2.5 space-y-2 min-h-[150px] bg-slate-300/80 border-t border-slate-300 rounded-b-xl transition-colors"
+      >
         {phaseCards.length > 0 ? (
           phaseCards.map((card) => (
             <CardItem
@@ -276,12 +289,12 @@ export function KanbanColumn({
             />
           ))
         ) : (
-          <div className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-slate-200/80 rounded-lg text-slate-400 text-xs">
+          <div className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-slate-400/60 rounded-lg text-slate-600 bg-slate-200/60 text-xs">
             <span>Nenhum lead nesta fase</span>
             {onQuickAddLead && (
               <button
                 onClick={() => onQuickAddLead(phase.id)}
-                className="mt-2 text-blue-600 hover:underline font-semibold text-[11px]"
+                className="mt-2 text-blue-700 hover:underline font-semibold text-[11px]"
               >
                 + Adicionar Lead
               </button>
