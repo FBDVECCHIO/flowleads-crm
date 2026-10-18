@@ -79,6 +79,12 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
         fetch(`/api/checklists?_t=${t}`, { cache: "no-store" }),
         fetch(`/api/sellers?_t=${t}`, { cache: "no-store" }),
       ]);
+
+      if (aRes.status === 401) {
+        window.location.href = `/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+
       if (pRes.ok) {
         const pData = await pRes.json();
         setPipe(pData);

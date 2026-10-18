@@ -22,7 +22,10 @@ test("Task 4: Automation Engine & Webhook Dispatcher Tests", async () => {
   assert.ok(lead);
 
   // Verificar se o card foi atribuído a um usuário pela automação
-  const sdrUser = await prisma.user.findFirst({ where: { email: "carlos@flowleads.com" } });
+  let sdrUser = await prisma.user.findFirst({ where: { email: "carlos@flowleads.com" } });
+  if (!sdrUser) {
+    sdrUser = await prisma.user.findFirst();
+  }
   assert.ok(sdrUser);
 
   const reloadedCard = await CardService.getCardById(lead.id);

@@ -1,6 +1,6 @@
-import path from "node:path";
-import fs from "node:fs/promises";
-import crypto from "node:crypto";
+import path from "path";
+import fs from "fs/promises";
+import crypto from "crypto";
 
 export const ALLOWED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".docx"];
 export const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10MB

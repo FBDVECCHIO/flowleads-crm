@@ -12,3 +12,4 @@ docs/research/raw
 
 prisma/*.db
 prisma/*.db-journal
+backups/

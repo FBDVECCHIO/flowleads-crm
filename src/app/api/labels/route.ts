@@ -33,24 +33,18 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     await ensureDatabaseReady();
-    // Check authorization: support x-user-role header or session cookie
-    const headerRole = req.headers.get("x-user-role");
-    let role = headerRole;
-
-    if (!role) {
-      try {
-        const session = await requireAuth(req);
-        role = session.role;
-      } catch (authErr: any) {
-        return Response.json(
-          { error: "Sessão não autenticada." },
-          { status: 401 }
-        );
-      }
+    let session;
+    try {
+      session = await requireAuth(req);
+    } catch (authErr: any) {
+      return Response.json(
+        { error: "Sessão não autenticada." },
+        { status: 401 }
+      );
     }
 
     // Strict governance: only SUPERVISOR or ADMIN can create tags
-    if (role !== "SUPERVISOR" && role !== "ADMIN") {
+    if (session.role !== "SUPERVISOR" && session.role !== "ADMIN") {
       return Response.json(
         { error: "Acesso não autorizado: apenas usuários com perfil SUPERVISOR ou ADMIN podem criar novas etiquetas." },
         { status: 403 }

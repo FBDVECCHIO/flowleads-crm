@@ -1,4 +1,4 @@
-import { getDefaultUser, verifySession } from "../../../../lib/auth.ts";
+import { verifySession } from "../../../../lib/auth.ts";
 import { prisma } from "../../../../lib/prisma.ts";
 import { ensureDatabaseReady } from "../../../../lib/dbSync.ts";
 
@@ -55,8 +55,10 @@ export async function GET(req: Request) {
       }
     }
 
-    const user = await getDefaultUser();
-    return Response.json({ user }, { status: 200, headers: noStoreHeaders });
+    return Response.json(
+      { error: "Sessão expirada ou não autenticada." },
+      { status: 401, headers: noStoreHeaders }
+    );
   } catch (error: any) {
     return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });
   }

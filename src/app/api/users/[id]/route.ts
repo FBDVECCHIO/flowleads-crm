@@ -1,5 +1,5 @@
 import { prisma } from "../../../../lib/prisma.ts";
-import { requireAuth, getDefaultUser } from "../../../../lib/auth.ts";
+import { requireAuth } from "../../../../lib/auth.ts";
 import { persistDatabase, ensureDatabaseReady } from "../../../../lib/dbSync.ts";
 import bcrypt from "bcryptjs";
 
@@ -19,11 +19,9 @@ export async function GET(
   try {
     await ensureDatabaseReady();
     const resolvedParams = await Promise.resolve(params);
-    const session = await requireAuth(req).catch(() => null);
-    const defaultUser = await getDefaultUser().catch(() => null);
-    const userRole = req.headers.get("x-user-role") || session?.role || defaultUser?.role || "ADMIN";
+    const session = await requireAuth(req);
 
-    if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
+    if (session.role !== "ADMIN" && session.role !== "SUPERVISOR") {
       return Response.json({ error: "Acesso restrito a Supervisores." }, { status: 403, headers: noStoreHeaders });
     }
 
@@ -34,6 +32,7 @@ export async function GET(
         name: true,
         email: true,
         role: true,
+        organizationId: true,
         whatsappNumber: true,
         monthlyTargetAmount: true,
         monthlyTargetDeals: true,
@@ -50,9 +49,14 @@ export async function GET(
       return Response.json({ error: "Usuário não encontrado." }, { status: 404, headers: noStoreHeaders });
     }
 
+    if (session.organizationId && user.organizationId !== session.organizationId) {
+      return Response.json({ error: "Acesso não autorizado a este usuário." }, { status: 403, headers: noStoreHeaders });
+    }
+
     return Response.json(user, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });
+    const status = error.status || error.statusCode || 500;
+    return Response.json({ error: error.message }, { status, headers: noStoreHeaders });
   }
 }
 
@@ -63,12 +67,22 @@ export async function PATCH(
   try {
     await ensureDatabaseReady();
     const resolvedParams = await Promise.resolve(params);
-    const session = await requireAuth(req).catch(() => null);
-    const defaultUser = await getDefaultUser().catch(() => null);
-    const userRole = req.headers.get("x-user-role") || session?.role || defaultUser?.role || "ADMIN";
+    const session = await requireAuth(req);
 
-    if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
+    if (session.role !== "ADMIN" && session.role !== "SUPERVISOR") {
       return Response.json({ error: "Acesso restrito a Supervisores." }, { status: 403, headers: noStoreHeaders });
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { id: resolvedParams.id },
+    });
+
+    if (!existingUser) {
+      return Response.json({ error: "Usuário não encontrado." }, { status: 404, headers: noStoreHeaders });
+    }
+
+    if (session.organizationId && existingUser.organizationId !== session.organizationId) {
+      return Response.json({ error: "Acesso não autorizado a este usuário." }, { status: 403, headers: noStoreHeaders });
     }
 
     const body = await req.json();
@@ -116,7 +130,8 @@ export async function PATCH(
     await persistDatabase();
     return Response.json(updatedUser, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message || "Erro ao atualizar usuário." }, { status: 500, headers: noStoreHeaders });
+    const status = error.status || error.statusCode || 500;
+    return Response.json({ error: error.message || "Erro ao atualizar usuário." }, { status, headers: noStoreHeaders });
   }
 }
 
@@ -134,17 +149,26 @@ export async function DELETE(
   try {
     await ensureDatabaseReady();
     const resolvedParams = await Promise.resolve(params);
-    const session = await requireAuth(req).catch(() => null);
-    const defaultUser = await getDefaultUser().catch(() => null);
-    const userRole = req.headers.get("x-user-role") || session?.role || defaultUser?.role || "ADMIN";
-    const currentUserId = req.headers.get("x-user-id") || session?.userId || defaultUser?.id;
+    const session = await requireAuth(req);
 
-    if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
+    if (session.role !== "ADMIN" && session.role !== "SUPERVISOR") {
       return Response.json({ error: "Acesso restrito a Supervisores." }, { status: 403, headers: noStoreHeaders });
     }
 
-    if (currentUserId && currentUserId === resolvedParams.id) {
+    if (session.userId === resolvedParams.id) {
       return Response.json({ error: "Não é permitido excluir o próprio usuário logado." }, { status: 400, headers: noStoreHeaders });
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { id: resolvedParams.id },
+    });
+
+    if (!existingUser) {
+      return Response.json({ error: "Usuário não encontrado." }, { status: 404, headers: noStoreHeaders });
+    }
+
+    if (session.organizationId && existingUser.organizationId !== session.organizationId) {
+      return Response.json({ error: "Acesso não autorizado a este usuário." }, { status: 403, headers: noStoreHeaders });
     }
 
     await prisma.$transaction([
@@ -157,6 +181,7 @@ export async function DELETE(
     await persistDatabase();
     return Response.json({ success: true, message: "Usuário excluído com sucesso." }, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message || "Erro ao excluir usuário." }, { status: 500, headers: noStoreHeaders });
+    const status = error.status || error.statusCode || 500;
+    return Response.json({ error: error.message || "Erro ao excluir usuário." }, { status, headers: noStoreHeaders });
   }
 }

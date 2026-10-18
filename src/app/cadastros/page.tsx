@@ -172,6 +172,11 @@ export default function CadastrosPage() {
         fetch(`/api/checklists${cacheBust}`, { cache: "no-store" }),
       ]);
 
+      if (authRes.status === 401) {
+        window.location.href = `/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+
       if (authRes.ok) {
         const authData = await authRes.json();
         setCurrentUser(authData.user);

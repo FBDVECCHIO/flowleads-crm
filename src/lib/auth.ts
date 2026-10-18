@@ -1,6 +1,6 @@
 import { prisma } from "./prisma.ts";
 import bcrypt from "bcryptjs";
-import crypto from "node:crypto";
+import crypto from "crypto";
 import { ensureDatabaseReady } from "./dbSync.ts";
 
 export interface SessionUser {
@@ -19,65 +19,20 @@ export interface SessionUser {
   workEndTime?: string | null;
 }
 
-export interface SessionPayload {
-  userId: string;
-  email: string;
-  name: string;
-  role: "ADMIN" | "SUPERVISOR" | "MEMBER";
-  organizationId: string;
-  fingerprint: string;
-  issuedAt: number;
-}
-
-const SESSION_SECRET = process.env.SESSION_SECRET || "flowleads_secure_hmac_secret_2026";
-
-/**
- * SHA-256 fingerprint of User-Agent to prevent session hijacking
- */
-export function computeUserAgentFingerprint(userAgent: string): string {
-  return crypto.createHash("sha256").update(userAgent || "").digest("hex");
-}
-
-/**
- * Stateless HMAC-SHA256 session token signer
- */
-export function signSession(payload: SessionPayload, secret = SESSION_SECRET): string {
-  const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const sig = crypto.createHmac("sha256", secret).update(data).digest("base64url");
-  return `${data}.${sig}`;
-}
-
-/**
- * Verify and parse HMAC-SHA256 session token with timing-safe check & User-Agent fingerprint defense
- */
-export function verifySession(
-  token: string,
-  userAgent?: string,
-  secret = SESSION_SECRET,
-  ttlMs = 24 * 60 * 60 * 1000
-): SessionPayload | null {
-  if (!token || typeof token !== "string") return null;
-  const parts = token.split(".");
-  if (parts.length !== 2) return null;
-
-  const [data64, signature] = parts;
-  const expectedSig = crypto.createHmac("sha256", secret).update(data64).digest("base64url");
-
-  if (signature.length !== expectedSig.length) return null;
-  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSig))) return null;
-
-  try {
-    const payload = JSON.parse(Buffer.from(data64, "base64url").toString("utf8")) as SessionPayload;
-    if (Date.now() - payload.issuedAt > ttlMs) return null;
-    if (userAgent) {
-      const expectedFingerprint = computeUserAgentFingerprint(userAgent);
-      if (payload.fingerprint !== expectedFingerprint) return null;
-    }
-    return payload;
-  } catch {
-    return null;
-  }
-}
+export {
+  type SessionPayload,
+  getSessionSecret,
+  computeUserAgentFingerprint,
+  signSession,
+  verifySession,
+} from "./sessionToken.ts";
+import {
+  type SessionPayload,
+  getSessionSecret,
+  computeUserAgentFingerprint,
+  signSession,
+  verifySession,
+} from "./sessionToken.ts";
 
 /**
  * Helper to extract time parts in America/Sao_Paulo timezone

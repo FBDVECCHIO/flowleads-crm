@@ -17,12 +17,19 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    const session = await requireAuth(req);
     const resolvedParams = await Promise.resolve(params);
     const card = await getCardById(resolvedParams.id);
     if (!card) return Response.json({ error: "Card não encontrado." }, { status: 404, headers: noStoreHeaders });
+
+    if (session.organizationId && card.pipe?.organizationId && card.pipe.organizationId !== session.organizationId) {
+      return Response.json({ error: "Acesso não autorizado a este registro." }, { status: 403, headers: noStoreHeaders });
+    }
+
     return Response.json(card, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });
+    const status = error.status || error.statusCode || 500;
+    return Response.json({ error: error.message }, { status, headers: noStoreHeaders });
   }
 }
 
@@ -31,16 +38,22 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    const session = await requireAuth(req);
     const resolvedParams = await Promise.resolve(params);
-    const session = await requireAuth(req).catch(() => null);
-    const userId = session?.userId || req.headers.get("x-user-id") || undefined;
+    const card = await getCardById(resolvedParams.id);
+    if (!card) return Response.json({ error: "Card não encontrado." }, { status: 404, headers: noStoreHeaders });
+
+    if (session.organizationId && card.pipe?.organizationId && card.pipe.organizationId !== session.organizationId) {
+      return Response.json({ error: "Acesso não autorizado a este registro." }, { status: 403, headers: noStoreHeaders });
+    }
 
     const body = await req.json();
     const { fieldValues } = body;
-    const updated = await updateCardFields(resolvedParams.id, fieldValues || {}, userId);
+    const updated = await updateCardFields(resolvedParams.id, fieldValues || {}, session.userId);
     return Response.json(updated, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message }, { status: error.status || 400, headers: noStoreHeaders });
+    const status = error.status || error.statusCode || 400;
+    return Response.json({ error: error.message }, { status, headers: noStoreHeaders });
   }
 }
 
@@ -49,10 +62,16 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    const session = await requireAuth(req);
     const resolvedParams = await Promise.resolve(params);
-    const session = await requireAuth(req).catch(() => null);
-    const userId = session?.userId || req.headers.get("x-user-id") || undefined;
+    const card = await getCardById(resolvedParams.id);
+    if (!card) return Response.json({ error: "Card não encontrado." }, { status: 404, headers: noStoreHeaders });
 
+    if (session.organizationId && card.pipe?.organizationId && card.pipe.organizationId !== session.organizationId) {
+      return Response.json({ error: "Acesso não autorizado a este registro." }, { status: 403, headers: noStoreHeaders });
+    }
+
+    const userId = session.userId;
     const body = await req.json();
 
     if (body.title) {
@@ -88,7 +107,8 @@ export async function PATCH(
 
     return Response.json({ error: "Nenhum campo para atualização fornecido." }, { status: 400, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message }, { status: error.status || 400, headers: noStoreHeaders });
+    const status = error.status || error.statusCode || 400;
+    return Response.json({ error: error.message }, { status, headers: noStoreHeaders });
   }
 }
 
@@ -98,11 +118,15 @@ export async function DELETE(
 ) {
   try {
     const resolvedParams = await Promise.resolve(params);
-    const session = await requireAuth(req).catch(() => null);
-    const userRole = req.headers.get("x-user-role") || session?.role || "MEMBER";
-    const userId = req.headers.get("x-user-id") || session?.userId;
+    const session = await requireAuth(req);
+    const card = await getCardById(resolvedParams.id);
+    if (!card) return Response.json({ error: "Card não encontrado." }, { status: 404, headers: noStoreHeaders });
 
-    await deleteCard(resolvedParams.id, userId, userRole);
+    if (session.organizationId && card.pipe?.organizationId && card.pipe.organizationId !== session.organizationId) {
+      return Response.json({ error: "Acesso não autorizado a este registro." }, { status: 403, headers: noStoreHeaders });
+    }
+
+    await deleteCard(resolvedParams.id, session.userId, session.role);
     return Response.json({ success: true, message: "Card excluído com sucesso." }, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
     const status = error.statusCode || error.status || 500;

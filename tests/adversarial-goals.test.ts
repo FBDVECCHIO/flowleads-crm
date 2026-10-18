@@ -594,7 +594,7 @@ test("Empirical Adversarial Challenge: Goals Attainment & Ranking Integrity (M2)
       assert.ok(data.teamRanking.length >= 4);
     });
 
-    await t.test("6.3 Empirical Security Finding: includeRanking=true parameter exposes teamRanking to MEMBER", async () => {
+    await t.test("6.3 Secured: includeRanking parameter does not expose teamRanking to MEMBER", async () => {
       const ua = "FlowLeadsTestAgent/1.0";
       const token = signSession({
         userId: repStandard.id,
@@ -616,12 +616,11 @@ test("Empirical Adversarial Challenge: Goals Attainment & Ranking Integrity (M2)
       const res = await getGoalsRoute(req);
       assert.equal(res.status, 200);
       const data = await res.json();
-      // EMPIRICAL OBSERVATION: By appending includeRanking=true, a MEMBER receives the full teamRanking!
-      assert.ok(Array.isArray(data.teamRanking), "Empirically demonstrates includeRanking parameter override");
+      assert.equal(data.teamRanking, null, "Secured: Member request with includeRanking=true must NOT expose team ranking");
       assert.equal(data.isSupervisor, false);
     });
 
-    await t.test("6.4 Empirical Security Finding: userId parameter allows cross-user goal inspection in API", async () => {
+    await t.test("6.4 Secured: userId parameter does not allow cross-user goal inspection for MEMBER", async () => {
       const ua = "FlowLeadsTestAgent/1.0";
       const token = signSession({
         userId: repStandard.id,
@@ -644,8 +643,8 @@ test("Empirical Adversarial Challenge: Goals Attainment & Ranking Integrity (M2)
       const res = await getGoalsRoute(req);
       assert.equal(res.status, 200);
       const data = await res.json();
-      // EMPIRICAL OBSERVATION: The API returns the target user's goal even though requester is MEMBER!
-      assert.equal(data.userGoal.userId, adminOrgA.id, "Empirically demonstrates arbitrary user target inspection");
+      // Secured: MEMBER cannot inspect other users' goals; their own metrics are returned
+      assert.equal(data.userGoal.userId, repStandard.id, "Secured: Member cannot inspect other users goals via userId parameter");
     });
 
     await t.test("6.5 Negative Deal Value: Won deal with negative value decrements currentAmount safely", async () => {

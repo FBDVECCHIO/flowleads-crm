@@ -1,5 +1,5 @@
 import { prisma } from "../../../lib/prisma.ts";
-import { requireAuth, getDefaultUser } from "../../../lib/auth.ts";
+import { requireAuth } from "../../../lib/auth.ts";
 import { persistDatabase, ensureDatabaseReady } from "../../../lib/dbSync.ts";
 import { maskPhone } from "../../../lib/utils.ts";
 import bcrypt from "bcryptjs";
@@ -16,23 +16,19 @@ const noStoreHeaders = {
 export async function GET(req: Request) {
   try {
     await ensureDatabaseReady();
-    const session = await requireAuth(req).catch(() => null);
-    const defaultUser = await getDefaultUser().catch(() => null);
+    const session = await requireAuth(req);
     
-    // Check role or header
-    const userRole = req.headers.get("x-user-role") || session?.role || defaultUser?.role || "ADMIN";
-    if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
+    if (session.role !== "ADMIN" && session.role !== "SUPERVISOR") {
       return Response.json(
         { error: "Acesso restrito para Supervisores e Administradores." },
         { status: 403, headers: noStoreHeaders }
       );
     }
 
-    const orgId = session?.organizationId || (await prisma.organization.findFirst())?.id;
+    const orgId = session.organizationId;
     if (!orgId) {
       return Response.json({ error: "Organização não localizada." }, { status: 404, headers: noStoreHeaders });
     }
-
 
     const users = await prisma.user.findMany({
       where: { organizationId: orgId },
@@ -57,18 +53,17 @@ export async function GET(req: Request) {
 
     return Response.json(users, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
-    return Response.json({ error: error.message || "Erro ao listar usuários." }, { status: error.status || 500, headers: noStoreHeaders });
+    const status = error.status || error.statusCode || 500;
+    return Response.json({ error: error.message || "Erro ao listar usuários." }, { status, headers: noStoreHeaders });
   }
 }
 
 export async function POST(req: Request) {
   try {
     await ensureDatabaseReady();
-    const session = await requireAuth(req).catch(() => null);
-    const defaultUser = await getDefaultUser().catch(() => null);
-    const userRole = req.headers.get("x-user-role") || session?.role || defaultUser?.role || "ADMIN";
+    const session = await requireAuth(req);
 
-    if (userRole !== "ADMIN" && userRole !== "SUPERVISOR") {
+    if (session.role !== "ADMIN" && session.role !== "SUPERVISOR") {
       return Response.json(
         { error: "Apenas Supervisores ou Administradores podem cadastrar novos usuários." },
         { status: 403, headers: noStoreHeaders }
@@ -120,9 +115,9 @@ export async function POST(req: Request) {
       return Response.json({ error: "Já existe um usuário cadastrado com este nome de acesso ou e-mail." }, { status: 409, headers: noStoreHeaders });
     }
 
-    const orgId = session?.organizationId || (await prisma.organization.findFirst())?.id;
+    const orgId = session.organizationId;
     if (!orgId) {
-      return Response.json({ error: "Organização não localizada." }, { status: 404, headers: noStoreHeaders });
+      return Response.json({ error: "Organização não localizada na sessão." }, { status: 400, headers: noStoreHeaders });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);

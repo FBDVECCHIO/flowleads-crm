@@ -88,6 +88,11 @@ export default function UsersPage() {
         fetch(`/api/pipes${cacheBust}`, { cache: "no-store" }),
       ]);
 
+      if (authRes.status === 401) {
+        window.location.href = `/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+
       const authData = await authRes.json();
       setCurrentUser(authData.user);
 

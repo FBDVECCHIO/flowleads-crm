@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+import crypto from "crypto";
 import { prisma } from "../lib/prisma.ts";
 import { maskPhone } from "../lib/utils.ts";
 
@@ -39,7 +39,7 @@ export interface MetaWebhookPayload {
 export function verifyMetaSignature(
   rawBody: string,
   signatureHeader: string,
-  appSecret: string = process.env.META_APP_SECRET || "meta_app_secret_xyz123"
+  appSecret: string = process.env.META_APP_SECRET || ""
 ): boolean {
   if (!rawBody || !signatureHeader || !appSecret) return false;
 
