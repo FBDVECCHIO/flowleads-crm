@@ -5,6 +5,7 @@ import { GoalProgress } from "@/services/goalService";
 import { GoalThermometer } from "./GoalThermometer";
 import { GoalRankingTable } from "./GoalRankingTable";
 import MosaicLens from "@/components/ui/MosaicLens";
+import { LiquidGlassToggle } from "@/components/theme/LiquidGlassContext";
 import { formatCurrency } from "@/lib/utils";
 import { 
   Sparkles, 
@@ -78,12 +79,15 @@ export function GoalDashboard({
           <div className="absolute inset-0 bg-gradient-to-r from-blue-950/85 via-blue-900/65 to-indigo-950/80 pointer-events-none" />
         </div>
 
-        <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-semibold backdrop-blur-sm border border-white/20">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>FlowLeads by {orgName}</span>
-            <span className="text-blue-200">•</span>
-            <span className="text-blue-100">Expediente Comercial Ativo</span>
+        <div className="relative z-10 max-w-4xl space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-semibold backdrop-blur-sm border border-white/20">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>FlowLeads by {orgName}</span>
+              <span className="text-blue-200">•</span>
+              <span className="text-blue-100">Expediente Comercial Ativo</span>
+            </div>
+            <LiquidGlassToggle />
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow-sm">
@@ -136,7 +140,7 @@ export function GoalDashboard({
       {/* 2. Grid Principal de KPIs de Metas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Meta Mensal */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between liquid-glass-card">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-bold uppercase tracking-wider">Meta Mensal Total</span>
             <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -154,7 +158,7 @@ export function GoalDashboard({
         </div>
 
         {/* Card 2: Realizado */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between liquid-glass-card">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-bold uppercase tracking-wider">Realizado (Ganho)</span>
             <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -172,7 +176,7 @@ export function GoalDashboard({
         </div>
 
         {/* Card 3: Faltante */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between liquid-glass-card">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-bold uppercase tracking-wider">Faltante p/ Cota</span>
             <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
@@ -190,7 +194,7 @@ export function GoalDashboard({
         </div>
 
         {/* Card 4: Posição no Ranking */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between liquid-glass-card">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-bold uppercase tracking-wider">Sua Posição</span>
             <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
@@ -211,7 +215,7 @@ export function GoalDashboard({
       {/* 2.1 Grid Analítico: Metas por Dias Úteis & Ritmo (Pacing) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card A: Meta Diária Normal */}
-        <div className="bg-gradient-to-br from-white to-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-white to-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between liquid-glass-card">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Meta Diária Normal</span>
             <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
@@ -229,7 +233,7 @@ export function GoalDashboard({
         </div>
 
         {/* Card B: Meta Diária Acumulada (Restante) */}
-        <div className="bg-gradient-to-br from-white to-blue-50/30 p-5 rounded-2xl border border-blue-200/70 shadow-sm flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-white to-blue-50/30 p-5 rounded-2xl border border-blue-200/70 shadow-sm flex flex-col justify-between liquid-glass-card">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[11px] font-bold uppercase tracking-wider text-blue-900">Meta Diária Acumulada</span>
             <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
@@ -247,7 +251,7 @@ export function GoalDashboard({
         </div>
 
         {/* Card C: Meta Semanal */}
-        <div className="bg-gradient-to-br from-white to-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-white to-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between liquid-glass-card">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Meta Semanal</span>
             <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
@@ -265,7 +269,7 @@ export function GoalDashboard({
         </div>
 
         {/* Card D: Ritmo de Vendas (Pacing) */}
-        <div className="bg-gradient-to-br from-white to-emerald-50/30 p-5 rounded-2xl border border-emerald-200/70 shadow-sm flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-white to-emerald-50/30 p-5 rounded-2xl border border-emerald-200/70 shadow-sm flex flex-col justify-between liquid-glass-card">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-900">Ritmo de Vendas (Pacing)</span>
             <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">

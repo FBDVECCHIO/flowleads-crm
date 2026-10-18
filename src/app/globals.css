@@ -35,3 +35,86 @@ textarea {
   text-transform: uppercase;
 }
 
+/* ==========================================================================
+   LIQUID GLASS DESIGN SYSTEM (FLOWLEADS EDITION — PANE COOKBOOK)
+   ========================================================================== */
+
+[data-liquid-glass="true"] {
+  --glass-bg: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-blur: blur(16px) saturate(190%);
+  --glass-depth: inset 0 1px 1px rgba(255, 255, 255, 0.95),
+                 inset 0 -1px 1px rgba(255, 255, 255, 0.35),
+                 inset 3px 4px 14px -6px rgba(255, 255, 255, 0.8),
+                 inset -4px -6px 14px -8px rgba(255, 255, 255, 0.4),
+                 inset 0 -14px 26px -18px rgba(15, 35, 110, 0.12);
+  --glass-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 16px 32px -8px rgba(15, 23, 42, 0.1);
+  --spring-lens: cubic-bezier(0.34, 1.45, 0.55, 1);
+}
+
+[data-liquid-glass="true"] .liquid-glass-card {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-depth), var(--glass-shadow) !important;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.28s var(--spring-lens), box-shadow 0.28s ease !important;
+}
+
+[data-liquid-glass="true"] .liquid-glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glass-depth), 0 8px 30px -4px rgba(15, 23, 42, 0.15) !important;
+}
+
+/* Especular Glint dinâmico que acompanha o cursor */
+[data-liquid-glass="true"] .liquid-glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    500px circle at var(--gx, 50%) var(--gy, 50%),
+    rgba(255, 255, 255, 0.35),
+    transparent 50%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: inherit;
+  z-index: 1;
+}
+
+[data-liquid-glass="true"] .liquid-glass-card:hover::before {
+  opacity: 1;
+}
+
+/* Barra de Progresso Prismática Líquida */
+[data-liquid-glass="true"] .liquid-prism-bar {
+  background: linear-gradient(90deg, #1d4ed8, #3b82f6, #06b6d4, #10b981) !important;
+  background-size: 200% 100% !important;
+  animation: liquid-prism-shimmer 4s ease infinite !important;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.65), 0 0 14px rgba(37, 99, 235, 0.35) !important;
+}
+
+@keyframes liquid-prism-shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Pílula de Vidro Líquido com Bisel */
+[data-liquid-glass="true"] .liquid-glass-pill {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Lente de Mola para Navegação */
+[data-liquid-glass="true"] .spring-lens-active {
+  transition: transform 0.35s cubic-bezier(0.34, 1.45, 0.55, 1), background-color 0.2s ease !important;
+}
+
+

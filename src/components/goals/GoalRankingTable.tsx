@@ -12,7 +12,7 @@ interface GoalRankingTableProps {
 export function GoalRankingTable({ ranking = [], currentUserId }: GoalRankingTableProps) {
   const list = Array.isArray(ranking) ? ranking : [];
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+    <div className="liquid-glass-card bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
       <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">

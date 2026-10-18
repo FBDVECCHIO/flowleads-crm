@@ -76,7 +76,7 @@ export function GoalThermometer({
   const visualProgressWidth = Math.min(Math.max(safePercentage, 0), 100);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+    <div className="liquid-glass-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
       {/* Header do Termômetro */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -112,7 +112,7 @@ export function GoalThermometer({
       <div className="space-y-2">
         <div className="relative w-full h-7 bg-slate-100 rounded-full overflow-hidden p-1 shadow-inner">
           <div
-            className={`h-full rounded-full bg-gradient-to-r ${barGradient} transition-all duration-700 ease-out shadow flex items-center justify-end pr-2`}
+            className={`h-full rounded-full liquid-prism-bar bg-gradient-to-r ${barGradient} transition-all duration-700 ease-out shadow flex items-center justify-end pr-2`}
             style={{ width: `${visualProgressWidth}%` }}
           >
             {visualProgressWidth > 15 && (
