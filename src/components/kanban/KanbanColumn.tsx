@@ -61,19 +61,18 @@ export function KanbanColumn({
   const totalValue = phaseCards.reduce((acc, c) => acc + (c.dealValue || 0), 0);
 
   // Governança estrita:
-  // Coluna 1: NOVOS LEADS (imutável na 1ª posição)
-  // Penúltima: FECHADO (isFinalWon, imutável)
-  // Última: PERDIDO (isFinalLost, imutável)
-  const isFirst = phase.order === 1 || /^(novos?\s+leads?|novo\s+lead)$/i.test(phase.name || "");
+  // Apenas a fase de entrada inicial de leads (NOVOS LEADS) e as fases de fechamento (GANHO / PERDIDO) são âncoras.
+  // Contato Inicial e demais fases intermediárias são 100% livres para movimentação, ordenação e edição.
+  const isFirst = /^(novos?\s+leads?|novo\s+lead)$/i.test(phase.name || "") || (phases[0]?.id === phase.id && /lead/i.test(phase.name || ""));
   const isWon = Boolean(phase.isFinalWon || /^(fechado\s*ganho|fechado)$/i.test(phase.name || ""));
   const isLost = Boolean(phase.isFinalLost || /^(fechado\s*perdido|perdido)$/i.test(phase.name || ""));
   const isImmutable = isFirst || isWon || isLost;
 
   // Identificar colunas intermediárias reordenáveis (excluindo os âncoras)
-  const firstPhaseId = phases[0]?.id;
-  const lostPhaseId = phases.find((p) => p.isFinalLost)?.id || phases[phases.length - 1]?.id;
+  const firstPhaseId = phases.find((p) => /^(novos?\s+leads?|novo\s+lead)$/i.test(p.name || ""))?.id || phases[0]?.id;
+  const lostPhaseId = phases.find((p) => p.isFinalLost || /^(fechado\s*perdido|perdido)$/i.test(p.name || ""))?.id || phases[phases.length - 1]?.id;
   const wonPhaseId =
-    phases.find((p) => (p.isFinalWon || /fechado/i.test(p.name)) && p.id !== lostPhaseId)?.id ||
+    phases.find((p) => (p.isFinalWon || /^(fechado\s*ganho|fechado)$/i.test(p.name || "")) && p.id !== lostPhaseId && p.id !== firstPhaseId)?.id ||
     phases[phases.length - 2]?.id;
 
   const anchorIds = new Set([firstPhaseId, wonPhaseId, lostPhaseId].filter(Boolean));

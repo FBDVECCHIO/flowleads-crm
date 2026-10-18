@@ -156,7 +156,7 @@ export class PipeService {
     if (allPhases.length <= 1) return allPhases;
 
     const firstPhase =
-      allPhases.find((p) => p.order === 1 || /^(novos?\s+leads?|novo\s+lead)$/i.test(p.name)) || allPhases[0];
+      allPhases.find((p) => /^(novos?\s+leads?|novo\s+lead)$/i.test(p.name)) || allPhases[0];
     const lostPhase =
       allPhases.find((p) => p.isFinalLost || /^(fechado\s+perdido|perdido)$/i.test(p.name)) ||
       allPhases[allPhases.length - 1];
@@ -226,7 +226,7 @@ export class PipeService {
     }
 
     const firstPhase =
-      allPhases.find((p) => p.order === 1 || /^(novos?\s+leads?|novo\s+lead)$/i.test(p.name)) || allPhases[0];
+      allPhases.find((p) => /^(novos?\s+leads?|novo\s+lead)$/i.test(p.name)) || allPhases[0];
     const lostPhase =
       allPhases.find((p) => p.isFinalLost || /^(fechado\s+perdido|perdido)$/i.test(p.name)) ||
       allPhases[allPhases.length - 1];
@@ -260,7 +260,6 @@ export class PipeService {
 
 export function isImmutablePhase(phase: { name?: string; order?: number; isFinalWon?: boolean; isFinalLost?: boolean }): boolean {
   if (!phase) return false;
-  if (phase.order === 1) return true;
   if (phase.isFinalWon) return true;
   if (phase.isFinalLost) return true;
   const normalized = (phase.name || "").trim().toLowerCase();
