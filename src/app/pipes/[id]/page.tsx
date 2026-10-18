@@ -24,6 +24,7 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [stores, setStores] = useState<any[]>([]);
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [sellers, setSellers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"kanban" | "list" | "table">("kanban");
   const [selectedCard, setSelectedCard] = useState<any>(null);
@@ -50,11 +51,25 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
   const [newLeadStore, setNewLeadStore] = useState("");
   const [newLeadEstimatedVisit, setNewLeadEstimatedVisit] = useState("");
   const [newLeadValue, setNewLeadValue] = useState("");
+  const [newLeadOsNumber, setNewLeadOsNumber] = useState("");
+  const [newLeadOsValue, setNewLeadOsValue] = useState("");
+  const [newLeadOsSeller, setNewLeadOsSeller] = useState("");
+  const [newLeadNotes, setNewLeadNotes] = useState("");
+
+  // Closing OS Interceptor Modal State
+  const [closingOSModalCard, setClosingOSModalCard] = useState<any | null>(null);
+  const [closingTargetPhaseId, setClosingTargetPhaseId] = useState<string | null>(null);
+  const [closingOsNumber, setClosingOsNumber] = useState("");
+  const [closingOsValue, setClosingOsValue] = useState("");
+  const [closingOsSeller, setClosingOsSeller] = useState("");
+  const [closingStore, setClosingStore] = useState("");
+  const [closingError, setClosingError] = useState<string | null>(null);
+  const [closingSubmitting, setClosingSubmitting] = useState(false);
 
   const fetchData = async () => {
     try {
       const t = Date.now();
-      const [pRes, cRes, lRes, aRes, sRes, campRes, chkRes] = await Promise.all([
+      const [pRes, cRes, lRes, aRes, sRes, campRes, chkRes, selRes] = await Promise.all([
         fetch(`/api/pipes/${pipeId}?_t=${t}`, { cache: "no-store" }),
         fetch(`/api/cards?pipeId=${pipeId}&_t=${t}`, { cache: "no-store" }),
         fetch(`/api/labels?pipeId=${pipeId}&_t=${t}`, { cache: "no-store" }),
@@ -62,6 +77,7 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
         fetch(`/api/stores?_t=${t}`, { cache: "no-store" }),
         fetch(`/api/campaigns?_t=${t}`, { cache: "no-store" }),
         fetch(`/api/checklists?_t=${t}`, { cache: "no-store" }),
+        fetch(`/api/sellers?_t=${t}`, { cache: "no-store" }),
       ]);
       if (pRes.ok) {
         const pData = await pRes.json();
@@ -86,6 +102,8 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
       const sData = sRes.ok ? await sRes.json() : [];
       const campData = campRes.ok ? await campRes.json() : [];
       const chkData = chkRes.ok ? await chkRes.json() : [];
+      const selData = selRes.ok ? await selRes.json() : [];
+      setSellers(Array.isArray(selData) ? selData : []);
 
       let cardsList = Array.isArray(cData) ? cData : [];
       // Clean up deletedCardIdsRef once server list confirms deletion
@@ -255,6 +273,41 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
   };
 
   const handleMoveCard = async (cardId: string, targetPhaseId: string, fieldValues?: Record<string, string>) => {
+    const targetPhase = pipe?.phases?.find((p: any) => p.id === targetPhaseId);
+    const isTargetWon = Boolean(targetPhase?.isFinalWon || /fechado\s*ganho|ganho/i.test(targetPhase?.name || ""));
+
+    if (isTargetWon) {
+      const card = cards.find((c) => c.id === cardId) || selectedCard;
+      const valuesMap: Record<string, string> = {};
+      if (card?.values) {
+        for (const v of card.values) {
+          if (v.field?.identifier && v.value) {
+            valuesMap[v.field.identifier.toLowerCase()] = v.value;
+          }
+        }
+      }
+      if (fieldValues) {
+        for (const [k, v] of Object.entries(fieldValues)) {
+          if (v) valuesMap[k.toLowerCase()] = String(v);
+        }
+      }
+
+      const osNumber = valuesMap["os_number"] || valuesMap["numero_os"];
+      const osValue = valuesMap["os_value"] || valuesMap["valor_os"] || valuesMap["sale_amount"];
+      const osSeller = valuesMap["os_seller"] || valuesMap["vendedor_os"] || valuesMap["seller_name"];
+
+      if (!osNumber || !osValue || !osSeller) {
+        setClosingOSModalCard(card);
+        setClosingTargetPhaseId(targetPhaseId);
+        setClosingOsNumber(valuesMap["os_number"] || "");
+        setClosingOsValue(valuesMap["os_value"] || valuesMap["initial_estimated_value"] || (card?.dealValue ? String(card.dealValue) : ""));
+        setClosingOsSeller(valuesMap["os_seller"] || "");
+        setClosingStore(valuesMap["store_negotiated"] || "");
+        setClosingError(null);
+        return;
+      }
+    }
+
     // Optimistic update
     movedCardsRef.current.set(cardId, { phaseId: targetPhaseId, timestamp: Date.now() });
     setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, currentPhaseId: targetPhaseId } : c)));
@@ -269,7 +322,11 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
       if (!res.ok) {
         movedCardsRef.current.delete(cardId);
         const card = cards.find((c) => c.id === cardId) || selectedCard;
-        if (card && updated.error?.includes("Campos obrigatórios")) {
+        if (updated.error?.includes("Ordem de Serviço") || updated.error?.includes("FECHADO (GANHO)")) {
+          setClosingOSModalCard(card);
+          setClosingTargetPhaseId(targetPhaseId);
+          setClosingError(updated.error);
+        } else if (card && updated.error?.includes("Campos obrigatórios")) {
           alert(updated.error);
           handleOpenCard(card, "fields");
         } else {
@@ -290,6 +347,59 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
       console.error(err);
       movedCardsRef.current.delete(cardId);
       await fetchData();
+    }
+  };
+
+  const handleConfirmClosingOS = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!closingOSModalCard || !closingTargetPhaseId) return;
+    if (!closingOsNumber.trim() || !closingOsValue.trim() || !closingOsSeller.trim()) {
+      setClosingError("Para transferir o lead para FECHADO (GANHO), é obrigatório preencher Número da OS, Valor da OS e Vendedor da OS.");
+      return;
+    }
+
+    setClosingSubmitting(true);
+    setClosingError(null);
+
+    const osFields: Record<string, string> = {
+      os_number: closingOsNumber.trim().toUpperCase(),
+      os_value: closingOsValue.trim(),
+      os_seller: closingOsSeller.trim().toUpperCase(),
+    };
+    if (closingStore) {
+      osFields.store_negotiated = closingStore.trim().toUpperCase();
+    }
+
+    const cardId = closingOSModalCard.id;
+    const targetId = closingTargetPhaseId;
+
+    try {
+      const res = await fetch(`/api/cards/${cardId}/move`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetPhaseId: targetId, fieldValues: osFields }),
+      });
+      const updated = await res.json();
+      if (!res.ok) {
+        setClosingError(updated.error || "Erro ao concluir fechamento da venda.");
+        setClosingSubmitting(false);
+        return;
+      }
+
+      setClosingOSModalCard(null);
+      setClosingTargetPhaseId(null);
+      setClosingSubmitting(false);
+
+      setCards((prev) =>
+        prev.map((c) => (c.id === cardId ? { ...c, ...updated, currentPhaseId: targetId } : c))
+      );
+      if (selectedCard && selectedCard.id === cardId) {
+        setSelectedCard(updated);
+      }
+      await fetchData();
+    } catch (err: any) {
+      setClosingError(err.message || "Erro inesperado.");
+      setClosingSubmitting(false);
     }
   };
 
@@ -434,20 +544,38 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
     e.preventDefault();
     if (!newLeadTitle.trim()) return;
 
+    const chosenPhaseId = newLeadPhaseId || pipe?.phases?.[0]?.id;
+    const chosenPhase = pipe?.phases?.find((p: any) => p.id === chosenPhaseId);
+    const isChosenWon = Boolean(chosenPhase?.isFinalWon || /fechado\s*ganho|ganho/i.test(chosenPhase?.name || ""));
+
+    if (isChosenWon) {
+      if (!newLeadOsNumber.trim() || !newLeadOsValue.trim() || !newLeadOsSeller.trim()) {
+        alert("Para cadastrar o lead diretamente no status FECHADO (GANHO), é obrigatório preencher Número da OS, Valor da OS e Vendedor da OS.");
+        return;
+      }
+    }
+
     const cleanTitle = newLeadTitle.trim().toUpperCase();
     const cleanPhone = maskPhone(newLeadPhone.trim());
     const cleanCampaign = newLeadCampaign.trim().toUpperCase();
     const cleanStore = newLeadStore.trim().toUpperCase();
     const cleanVisit = newLeadEstimatedVisit.trim().toUpperCase();
+    const cleanOsNumber = newLeadOsNumber.trim().toUpperCase();
+    const cleanOsValue = newLeadOsValue.trim();
+    const cleanOsSeller = newLeadOsSeller.trim().toUpperCase();
+    const cleanNotes = newLeadNotes.trim().toUpperCase();
+    const cleanInitialValue = newLeadValue.trim();
 
-    await fetch(`/api/cards`, {
+    const parsedDealValue = parseFloat(cleanOsValue) || parseFloat(cleanInitialValue) || 0;
+
+    const res = await fetch(`/api/cards`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         pipeId,
-        phaseId: newLeadPhaseId || undefined,
+        phaseId: chosenPhaseId || undefined,
         title: cleanTitle,
-        dealValue: parseFloat(newLeadValue) || 0,
+        dealValue: parsedDealValue,
         fieldValues: {
           lead_name: cleanTitle,
           lead_date: newLeadDate,
@@ -455,10 +583,21 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
           campaign_interest: cleanCampaign,
           store_negotiated: cleanStore,
           estimated_visit_datetime: cleanVisit,
-          deal_value: newLeadValue,
+          initial_estimated_value: cleanInitialValue,
+          os_number: cleanOsNumber,
+          os_value: cleanOsValue,
+          os_seller: cleanOsSeller,
+          observacoes: cleanNotes,
+          deal_value: cleanOsValue || cleanInitialValue,
         },
       }),
     });
+
+    if (!res.ok) {
+      const err = await res.json();
+      alert(err.error || "Erro ao cadastrar lead.");
+      return;
+    }
 
     setNewLeadTitle("");
     setNewLeadPhone("");
@@ -466,6 +605,10 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
     setNewLeadStore("");
     setNewLeadEstimatedVisit("");
     setNewLeadValue("");
+    setNewLeadOsNumber("");
+    setNewLeadOsValue("");
+    setNewLeadOsSeller("");
+    setNewLeadNotes("");
     setNewLeadPhaseId(null);
     setIsNewLeadOpen(false);
     await fetchData();
@@ -627,7 +770,7 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
         {/* Modal de Cadastro Completo de Lead para Lojas Físicas */}
         {isNewLeadOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-xl shadow-2xl border border-slate-200 p-5 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-2xl border border-slate-200 p-5 max-w-lg w-full max-h-[92vh] overflow-y-auto">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-3">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 uppercase">Cadastrar Novo Lead</h3>
@@ -642,115 +785,185 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
                 </button>
               </div>
 
-              <form onSubmit={handleCreateNewLead} className="space-y-3">
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Nome do Lead / Contato *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="EX: CARLOS OLIVEIRA"
-                    value={newLeadTitle}
-                    onChange={(e) => setNewLeadTitle(e.target.value.toUpperCase())}
-                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 uppercase"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Data do Contato</label>
-                    <input
-                      type="date"
-                      value={newLeadDate}
-                      onChange={(e) => setNewLeadDate(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
+              <form onSubmit={handleCreateNewLead} className="space-y-4">
+                {/* Seção 1: Dados do Lead & Atendimento */}
+                <div className="space-y-2.5">
+                  <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-slate-100">
+                    <span>1. Dados do Lead & Atendimento</span>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Telefone / WhatsApp</label>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Nome do Lead / Contato *</label>
                     <input
                       type="text"
-                      placeholder="(11) 98765-4321"
-                      value={newLeadPhone}
-                      onChange={(e) => setNewLeadPhone(maskPhone(e.target.value))}
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                      required
+                      placeholder="EX: CARLOS OLIVEIRA"
+                      value={newLeadTitle}
+                      onChange={(e) => setNewLeadTitle(e.target.value.toUpperCase())}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 uppercase"
                     />
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Data do Contato</label>
+                      <input
+                        type="date"
+                        value={newLeadDate}
+                        onChange={(e) => setNewLeadDate(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Telefone / WhatsApp</label>
+                      <input
+                        type="text"
+                        placeholder="(11) 98765-4321"
+                        value={newLeadPhone}
+                        onChange={(e) => setNewLeadPhone(maskPhone(e.target.value))}
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Campanha de Interesse</label>
+                      <select
+                        value={newLeadCampaign}
+                        onChange={(e) => setNewLeadCampaign(e.target.value.toUpperCase())}
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                      >
+                        <option value="">Selecione uma campanha...</option>
+                        {campaigns.map((camp) => (
+                          <option key={camp.id} value={camp.name}>
+                            {camp.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Loja Negociada de Destino</label>
+                      <select
+                        value={newLeadStore}
+                        onChange={(e) => setNewLeadStore(e.target.value.toUpperCase())}
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                      >
+                        <option value="">Selecione a loja física...</option>
+                        {stores.map((st) => (
+                          <option key={st.id} value={st.name}>
+                            {st.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Data/Horário Estimada da Visita</label>
+                      <input
+                        type="datetime-local"
+                        value={newLeadEstimatedVisit}
+                        onChange={(e) => setNewLeadEstimatedVisit(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Valor Inicial Estimado (R$)</label>
+                      <input
+                        type="number"
+                        placeholder="Ex: 850"
+                        value={newLeadValue}
+                        onChange={(e) => setNewLeadValue(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Campanha de Interesse</label>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Observações Comerciais</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Histórico da conversa, preferências do cliente, armações desejadas..."
+                      value={newLeadNotes}
+                      onChange={(e) => setNewLeadNotes(e.target.value.toUpperCase())}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 uppercase"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Fase Inicial no Funil</label>
                     <select
-                      value={newLeadCampaign}
-                      onChange={(e) => setNewLeadCampaign(e.target.value.toUpperCase())}
+                      value={newLeadPhaseId || pipe.phases[0]?.id || ""}
+                      onChange={(e) => setNewLeadPhaseId(e.target.value)}
                       className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                     >
-                      <option value="">Selecione uma campanha...</option>
-                      {campaigns.map((camp) => (
-                        <option key={camp.id} value={camp.name}>
-                          {camp.name}
+                      {pipe.phases.map((p: any) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} {p.isFinalWon ? "🏆 (Exige OS)" : ""}
                         </option>
                       ))}
                     </select>
                   </div>
+                </div>
+
+                {/* Seção 2: Fechamento da Venda na Loja - Ordem de Serviço (OS) */}
+                <div className="p-3 bg-emerald-50/50 border border-emerald-200 rounded-xl space-y-2.5">
+                  <div className="flex items-center justify-between pb-1 border-b border-emerald-100">
+                    <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider">
+                      2. Fechamento na Loja (Ordem de Serviço - OS)
+                    </span>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      Obrigatório para FECHADO (GANHO)
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-emerald-950 mb-0.5">Número da OS</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: OS-45892"
+                        value={newLeadOsNumber}
+                        onChange={(e) => setNewLeadOsNumber(e.target.value.toUpperCase())}
+                        className="w-full px-2.5 py-1.5 text-xs border border-emerald-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 uppercase bg-white font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-emerald-950 mb-0.5">Valor da OS (R$)</label>
+                      <input
+                        type="number"
+                        placeholder="Ex: 1250.00"
+                        value={newLeadOsValue}
+                        onChange={(e) => setNewLeadOsValue(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs border border-emerald-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+                      />
+                    </div>
+                  </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Loja Negociada de Destino</label>
+                    <label className="block text-[11px] font-semibold text-emerald-950 mb-0.5">Vendedor da OS</label>
                     <select
-                      value={newLeadStore}
-                      onChange={(e) => setNewLeadStore(e.target.value.toUpperCase())}
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                      value={newLeadOsSeller}
+                      onChange={(e) => setNewLeadOsSeller(e.target.value.toUpperCase())}
+                      className="w-full px-2.5 py-1.5 text-xs border border-emerald-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
                     >
-                      <option value="">Selecione a loja física...</option>
-                      {stores.map((st) => (
-                        <option key={st.id} value={st.name}>
-                          {st.name}
+                      <option value="">Selecione o vendedor / atendente...</option>
+                      {sellers.map((s) => (
+                        <option key={s.id} value={s.name}>
+                          {s.name} ({s.role})
                         </option>
                       ))}
                     </select>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Data/Horário Estimada da Visita</label>
-                    <input
-                      type="datetime-local"
-                      value={newLeadEstimatedVisit}
-                      onChange={(e) => setNewLeadEstimatedVisit(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Valor Inicial Estimado (R$)</label>
-                    <input
-                      type="number"
-                      placeholder="Ex: 850"
-                      value={newLeadValue}
-                      onChange={(e) => setNewLeadValue(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Fase Inicial no Funil</label>
-                  <select
-                    value={newLeadPhaseId || pipe.phases[0]?.id || ""}
-                    onChange={(e) => setNewLeadPhaseId(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                  >
-                    {pipe.phases.map((p: any) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => setIsNewLeadOpen(false)}
@@ -763,6 +976,130 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
                     className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded shadow-sm transition-colors"
                   >
                     Salvar Lead
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Interceptor de Conclusão de Fechamento com Ordem de Serviço (ClosingOSModal) */}
+        {closingOSModalCard && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-xl shadow-2xl border border-emerald-300 p-5 max-w-md w-full animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between pb-2 border-b border-emerald-100 mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm shrink-0">
+                    OS
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-950 uppercase">Concluir Fechamento da Venda</h3>
+                    <p className="text-[11px] text-slate-500">Lead: {closingOSModalCard.title}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setClosingOSModalCard(null);
+                    setClosingTargetPhaseId(null);
+                  }}
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900 mb-3">
+                <p className="font-semibold mb-0.5">🏆 Validação Obrigatória de Governança</p>
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  Para mover este lead para a fase <strong>FECHADO (GANHO)</strong>, é obrigatório registrar os dados da Ordem de Serviço emitida na loja física.
+                </p>
+              </div>
+
+              {closingError && (
+                <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 font-semibold mb-3">
+                  {closingError}
+                </div>
+              )}
+
+              <form onSubmit={handleConfirmClosingOS} className="space-y-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Número da OS *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: OS-45892"
+                    value={closingOsNumber}
+                    onChange={(e) => setClosingOsNumber(e.target.value.toUpperCase())}
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 uppercase font-mono"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Valor da OS (R$) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    placeholder="Ex: 1250.00"
+                    value={closingOsValue}
+                    onChange={(e) => setClosingOsValue(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Vendedor da OS *</label>
+                  <select
+                    required
+                    value={closingOsSeller}
+                    onChange={(e) => setClosingOsSeller(e.target.value.toUpperCase())}
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+                  >
+                    <option value="">Selecione o vendedor / atendente...</option>
+                    {sellers.map((s) => (
+                      <option key={s.id} value={s.name}>
+                        {s.name} ({s.role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">Loja Negociada de Destino</label>
+                  <select
+                    value={closingStore}
+                    onChange={(e) => setClosingStore(e.target.value.toUpperCase())}
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+                  >
+                    <option value="">Selecione a loja física...</option>
+                    {stores.map((st) => (
+                      <option key={st.id} value={st.name}>
+                        {st.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setClosingOSModalCard(null);
+                      setClosingTargetPhaseId(null);
+                    }}
+                    disabled={closingSubmitting}
+                    className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded font-medium transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={closingSubmitting}
+                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded shadow-sm transition-colors flex items-center gap-1.5"
+                  >
+                    <span>{closingSubmitting ? "Gravando..." : "🏆 Confirmar Fechamento e Salvar OS"}</span>
                   </button>
                 </div>
               </form>

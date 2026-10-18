@@ -1,4 +1,4 @@
-﻿import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -127,13 +127,17 @@ async function resetAllProduction() {
   }
 
   const fields = [
-    { label: "Nome do Lead", identifier: "nome_do_lead", type: "TEXT", isRequired: true, order: 0 },
-    { label: "WhatsApp / Telefone", identifier: "whatsapp", type: "PHONE", isRequired: true, order: 1 },
-    { label: "Campanha Meta Ads", identifier: "campanha_meta", type: "TEXT", isRequired: false, order: 2 },
-    { label: "Grupo de Anúncios / Adset", identifier: "grupo_anuncio", type: "TEXT", isRequired: false, order: 3 },
-    { label: "Criativo / Anúncio", identifier: "criativo_anuncio", type: "TEXT", isRequired: false, order: 4 },
-    { label: "Valor Estimado (R$)", identifier: "valor_estimado", type: "CURRENCY", isRequired: false, order: 5 },
-    { label: "Observações Comerciais", identifier: "observacoes", type: "TEXT", isRequired: false, order: 6 },
+    { label: "Nome do Lead / Contato", identifier: "lead_name", type: "TEXT", isRequired: true, order: 0 },
+    { label: "Data do Contato", identifier: "lead_date", type: "DATE", isRequired: false, order: 1 },
+    { label: "Telefone / WhatsApp", identifier: "lead_phone", type: "PHONE", isRequired: true, order: 2 },
+    { label: "Campanha de Interesse", identifier: "campaign_interest", type: "SELECT", isRequired: false, order: 3 },
+    { label: "Loja Negociada de Destino", identifier: "store_negotiated", type: "SELECT", isRequired: false, order: 4 },
+    { label: "Data/Horário Estimada da Visita", identifier: "estimated_visit_datetime", type: "DATETIME", isRequired: false, order: 5 },
+    { label: "Valor Inicial Estimado (R$)", identifier: "initial_estimated_value", type: "CURRENCY", isRequired: false, order: 6 },
+    { label: "Número da OS", identifier: "os_number", type: "TEXT", isRequired: false, order: 7 },
+    { label: "Valor da OS (R$)", identifier: "os_value", type: "CURRENCY", isRequired: false, order: 8 },
+    { label: "Vendedor da OS", identifier: "os_seller", type: "SELECT", isRequired: false, order: 9 },
+    { label: "Observações Comerciais", identifier: "observacoes", type: "TEXTAREA", isRequired: false, order: 10 },
   ];
   for (const f of fields) {
     await prisma.field.create({

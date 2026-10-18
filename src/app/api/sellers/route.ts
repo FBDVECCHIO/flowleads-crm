@@ -25,7 +25,39 @@ export async function GET(req: Request) {
       include: { store: true },
       orderBy: { name: "asc" },
     });
-    return Response.json(sellers, { status: 200, headers: noStoreHeaders });
+
+    // Also get active users to ensure operational users created by supervisor are available
+    const users = await prisma.user.findMany({
+      where: { role: { in: ["MEMBER", "SUPERVISOR", "ADMIN"] } },
+      select: { id: true, name: true, role: true, whatsappNumber: true },
+      orderBy: { name: "asc" },
+    });
+
+    const sellerNames = new Set(sellers.map((s) => s.name.toUpperCase().trim()));
+    const combined: any[] = [...sellers];
+
+    for (const u of users) {
+      const cleanName = u.name.toUpperCase().trim();
+      if (!sellerNames.has(cleanName)) {
+        combined.push({
+          id: `user-${u.id}`,
+          organizationId: "",
+          storeId: null,
+          name: cleanName,
+          phone: u.whatsappNumber,
+          role: u.role === "SUPERVISOR" ? "SUPERVISOR" : "VENDEDOR",
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          store: null,
+        });
+        sellerNames.add(cleanName);
+      }
+    }
+
+    combined.sort((a, b) => a.name.localeCompare(b.name));
+
+    return Response.json(combined, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
     return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });
   }

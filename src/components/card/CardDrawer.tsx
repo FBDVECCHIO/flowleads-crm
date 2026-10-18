@@ -224,6 +224,19 @@ export function CardDrawer({
     setSaving(true);
     setErrorMsg(null);
     try {
+      const targetPhase = phases.find((p) => p.id === targetPhaseId);
+      const isTargetWon = Boolean(targetPhase?.isFinalWon || /fechado\s*ganho|ganho/i.test(targetPhase?.name || ""));
+      if (isTargetWon) {
+        const osNumber = formValues["os_number"] || formValues["numero_os"];
+        const osValue = formValues["os_value"] || formValues["valor_os"] || formValues["sale_amount"];
+        const osSeller = formValues["os_seller"] || formValues["vendedor_os"] || formValues["seller_name"];
+        if (!osNumber || !osValue || !osSeller) {
+          setErrorMsg("⚠️ Para mover para a fase FECHADO (GANHO), é obrigatório preencher Número da OS, Valor da OS e Vendedor da OS na seção 2 abaixo.");
+          setActiveTab("fields");
+          setSaving(false);
+          return;
+        }
+      }
       await onMovePhase(card.id, targetPhaseId, formValues);
     } catch (err: any) {
       setErrorMsg(err.message);
@@ -403,8 +416,12 @@ export function CardDrawer({
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div>
-                  <span className="text-xs font-bold text-slate-800">Formulário de Informações do Lead</span>
-                  <p className="text-[10px] text-slate-400">Preencha os dados de distribuição para a loja física</p>
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                    Formulário de Informações do Lead
+                  </span>
+                  <p className="text-[10px] text-slate-500">
+                    Sincronização com Anúncios Meta Ads e Distribuição para Lojas Físicas
+                  </p>
                 </div>
                 <button
                   onClick={handleSaveFields}
@@ -415,176 +432,260 @@ export function CardDrawer({
                 </button>
               </div>
 
-              {/* Grid Compacto de Campos */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {(() => {
-                  const closingFieldKeys = new Set(["os_number", "sale_amount", "sale_date"]);
-                  const isWonPhase = Boolean(currentPhase?.isFinalWon || /ganho|fechado\s*ganho/i.test(currentPhase?.name || ""));
+              {/* Bloco 1: Dados do Lead & Atendimento */}
+              <div className="p-3.5 bg-slate-50/70 border border-slate-200 rounded-xl space-y-3">
+                <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
+                  <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>1. Dados do Lead & Atendimento</span>
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-medium">Meta Ads / Manual</span>
+                </div>
 
-                  return visibleFields.map((field) => {
-                    const isTextArea = field.type === "TEXTAREA";
-                    const isSelect = field.type === "SELECT";
-                    const isCampaign = field.identifier === "campaign_interest";
-                    const isStore = field.identifier === "store_negotiated";
-                    const isSeller = field.identifier === "seller_name";
-                    const isClosingField = closingFieldKeys.has(field.identifier);
-                    const isLocked = isClosingField && !isWonPhase;
+                <div className="space-y-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                      Nome do Lead / Contato *
+                    </label>
+                    <input
+                      type="text"
+                      value={formValues.lead_name || ""}
+                      onChange={(e) => handleFieldChange("lead_name", e.target.value)}
+                      placeholder="Ex: CARLOS OLIVEIRA"
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 uppercase font-medium bg-white"
+                    />
+                  </div>
 
-                    return (
-                      <div 
-                        key={field.id} 
-                        className={`space-y-1 ${isTextArea ? "sm:col-span-2" : ""}`}
-                      >
-                        <div className="flex items-center justify-between gap-1">
-                          <label className="block text-[11px] font-semibold text-slate-700">
-                            {field.label} {field.isRequired && <span className="text-red-500">*</span>}
-                          </label>
-                          {isLocked && (
-                            <span className="text-[9px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-semibold border border-amber-200 flex items-center gap-1">
-                              <Lock className="w-2.5 h-2.5" />
-                              Fase Fechado
-                            </span>
-                          )}
-                        </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                        Data do Contato
+                      </label>
+                      <input
+                        type="date"
+                        value={formValues.lead_date || ""}
+                        onChange={(e) => handleFieldChange("lead_date", e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                      />
+                    </div>
 
-                        {isTextArea ? (
-                          <textarea
-                            rows={2}
-                            disabled={isLocked}
-                            value={formValues[field.identifier] || ""}
-                            onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                            placeholder={isLocked ? "Disponível apenas na fase Fechado Ganho" : field.placeholder || ""}
-                            className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                              isLocked
-                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                                : "border-slate-300"
-                            }`}
-                          />
-                        ) : isCampaign ? (
-                          <select
-                            disabled={isLocked}
-                            value={formValues[field.identifier] || ""}
-                            onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                            className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                              isLocked
-                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                                : "border-slate-300 bg-white"
-                            }`}
+                    <div>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <label className="block text-[11px] font-semibold text-slate-700">
+                          Telefone / WhatsApp
+                        </label>
+                        {formValues.lead_phone && formValues.lead_phone.replace(/\D/g, "").length >= 10 && (
+                          <a
+                            href={`https://wa.me/55${formValues.lead_phone.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[9px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-0.5"
                           >
-                            <option value="">Selecione uma campanha...</option>
-                            {campaigns.length > 0
-                              ? campaigns.map((c) => (
-                                  <option key={c.id} value={c.name}>
-                                    {c.name}
-                                  </option>
-                                ))
-                              : JSON.parse(field.options || "[]").map((opt: string) => (
-                                  <option key={opt} value={opt}>
-                                    {opt}
-                                  </option>
-                                ))}
-                          </select>
-                        ) : isStore ? (
-                          <select
-                            disabled={isLocked}
-                            value={formValues[field.identifier] || ""}
-                            onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                            className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                              isLocked
-                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                                : "border-slate-300 bg-white"
-                            }`}
-                          >
-                            <option value="">Selecione a loja de destino...</option>
-                            {stores.length > 0
-                              ? stores.map((s) => (
-                                  <option key={s.id} value={s.name}>
-                                    {s.name}
-                                  </option>
-                                ))
-                              : JSON.parse(field.options || "[]").map((opt: string) => (
-                                  <option key={opt} value={opt}>
-                                    {opt}
-                                  </option>
-                                ))}
-                          </select>
-                        ) : isSeller ? (
-                          (() => {
-                            const matchedStore = stores.find((s) => s.name === formValues["store_negotiated"]);
-                            const filteredSellers = matchedStore
-                              ? sellers.filter((s) => s.storeId === matchedStore.id)
-                              : sellers;
-                            return (
-                              <select
-                                disabled={isLocked}
-                                value={formValues[field.identifier] || ""}
-                                onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                                className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                                  isLocked
-                                    ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                                    : "border-slate-300 bg-white"
-                                }`}
-                              >
-                                <option value="">
-                                  {isLocked ? "Disponível apenas na fase Fechado Ganho" : "Selecione o vendedor / atendente..."}
-                                </option>
-                                {filteredSellers.length > 0
-                                  ? filteredSellers.map((sel) => (
-                                      <option key={sel.id} value={sel.name}>
-                                        {sel.name} ({sel.role})
-                                      </option>
-                                    ))
-                                  : JSON.parse(field.options || "[]").map((opt: string) => (
-                                      <option key={opt} value={opt}>
-                                        {opt}
-                                      </option>
-                                    ))}
-                              </select>
-                            );
-                          })()
-                        ) : isSelect ? (
-                          <select
-                            disabled={isLocked}
-                            value={formValues[field.identifier] || ""}
-                            onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                            className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                              isLocked
-                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                                : "border-slate-300 bg-white"
-                            }`}
-                          >
-                            <option value="">Selecione...</option>
-                            {JSON.parse(field.options || "[]").map((opt: string) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            type={
-                              field.type === "NUMBER" || field.type === "CURRENCY"
-                                ? "number"
-                                : field.type === "DATE"
-                                ? "date"
-                                : "text"
-                            }
-                            disabled={isLocked}
-                            value={formValues[field.identifier] || ""}
-                            onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                            placeholder={isLocked ? "Disponível apenas na fase Fechado Ganho" : field.placeholder || ""}
-                            className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                              isLocked
-                                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                                : "border-slate-300"
-                            }`}
-                          />
+                            Abrir WhatsApp ↗
+                          </a>
                         )}
                       </div>
-                    );
-                  });
-                })()}
+                      <input
+                        type="text"
+                        value={formValues.lead_phone || ""}
+                        onChange={(e) => handleFieldChange("lead_phone", e.target.value)}
+                        placeholder="(11) 98765-4321"
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                        Campanha de Interesse
+                      </label>
+                      <select
+                        value={formValues.campaign_interest || ""}
+                        onChange={(e) => handleFieldChange("campaign_interest", e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                      >
+                        <option value="">Selecione uma campanha...</option>
+                        {campaigns.map((c) => (
+                          <option key={c.id} value={c.name}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                        Loja Negociada de Destino
+                      </label>
+                      <select
+                        value={formValues.store_negotiated || ""}
+                        onChange={(e) => handleFieldChange("store_negotiated", e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                      >
+                        <option value="">Selecione a loja física...</option>
+                        {stores.map((s) => (
+                          <option key={s.id} value={s.name}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                        Data/Horário Estimada da Visita
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={formValues.estimated_visit_datetime || ""}
+                        onChange={(e) => handleFieldChange("estimated_visit_datetime", e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                        Valor Inicial Estimado (R$)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formValues.initial_estimated_value || ""}
+                        onChange={(e) => handleFieldChange("initial_estimated_value", e.target.value)}
+                        placeholder="Ex: 850"
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                      Observações Comerciais
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={formValues.observacoes || ""}
+                      onChange={(e) => handleFieldChange("observacoes", e.target.value)}
+                      placeholder="Histórico da conversa, preferências do cliente, armações desejadas..."
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 uppercase bg-white"
+                    />
+                  </div>
+                </div>
               </div>
+
+              {/* Bloco 2: Fechamento da Venda na Loja - Ordem de Serviço (OS) */}
+              <div className="p-3.5 bg-emerald-50/40 border border-emerald-300 rounded-xl space-y-3 shadow-sm">
+                <div className="flex items-center justify-between pb-1.5 border-b border-emerald-200">
+                  <span className="text-[11px] font-bold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>2. Fechamento na Loja (Ordem de Serviço - OS)</span>
+                  </span>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    Obrigatório para FECHADO (GANHO)
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-emerald-950 mb-0.5">
+                      Número da OS *
+                    </label>
+                    <input
+                      type="text"
+                      value={formValues.os_number || ""}
+                      onChange={(e) => handleFieldChange("os_number", e.target.value)}
+                      placeholder="Ex: OS-45892"
+                      className="w-full px-2.5 py-1.5 text-xs border border-emerald-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 uppercase font-mono bg-white font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-emerald-950 mb-0.5">
+                      Valor da OS (R$) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formValues.os_value || ""}
+                      onChange={(e) => handleFieldChange("os_value", e.target.value)}
+                      placeholder="Ex: 1250.00"
+                      className="w-full px-2.5 py-1.5 text-xs border border-emerald-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-emerald-950 mb-0.5">
+                    Vendedor da OS *
+                  </label>
+                  <select
+                    value={formValues.os_seller || ""}
+                    onChange={(e) => handleFieldChange("os_seller", e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs border border-emerald-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white font-medium"
+                  >
+                    <option value="">Selecione o vendedor / atendente...</option>
+                    {sellers.map((s) => (
+                      <option key={s.id} value={s.name}>
+                        {s.name} ({s.role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Outros campos extras do Pipe (se houver) */}
+              {(() => {
+                const standardIdentifiers = new Set([
+                  "lead_name",
+                  "lead_date",
+                  "lead_phone",
+                  "campaign_interest",
+                  "store_negotiated",
+                  "estimated_visit_datetime",
+                  "initial_estimated_value",
+                  "observacoes",
+                  "os_number",
+                  "os_value",
+                  "os_seller",
+                ]);
+                const extraFields = visibleFields.filter(
+                  (f) => !standardIdentifiers.has(f.identifier.toLowerCase())
+                );
+                if (extraFields.length === 0) return null;
+
+                return (
+                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+                    <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block pb-1 border-b border-slate-200">
+                      Campos Adicionais
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {extraFields.map((field) => (
+                        <div key={field.id} className={field.type === "TEXTAREA" ? "sm:col-span-2" : ""}>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                            {field.label}
+                          </label>
+                          {field.type === "TEXTAREA" ? (
+                            <textarea
+                              rows={2}
+                              value={formValues[field.identifier] || ""}
+                              onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white uppercase"
+                            />
+                          ) : (
+                            <input
+                              type={field.type === "NUMBER" || field.type === "CURRENCY" ? "number" : "text"}
+                              value={formValues[field.identifier] || ""}
+                              onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Botão de salvar alterações nos campos do lead */}
               <div className="pt-4 border-t border-slate-200 flex items-center justify-between gap-2 bg-slate-50 p-3 rounded-xl mt-4">

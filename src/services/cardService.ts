@@ -77,12 +77,44 @@ export class CardService {
 
     const cleanTitle = (input.title || "").trim().toUpperCase();
 
+    const targetPhase = await prisma.phase.findUnique({ where: { id: targetPhaseId } });
+    const isTargetWon = Boolean(targetPhase?.isFinalWon || /fechado\s*ganho|ganho/i.test(targetPhase?.name || ""));
+
+    let dealVal = input.dealValue ?? 0;
+    const osValRaw = input.fieldValues?.os_value || input.fieldValues?.valor_os || input.fieldValues?.sale_amount;
+    if (osValRaw) {
+      const parsed = parseFloat(String(osValRaw).replace(/[^0-9.,]/g, "").replace(",", "."));
+      if (!isNaN(parsed) && parsed > 0) {
+        dealVal = parsed;
+      }
+    } else if (!dealVal && input.fieldValues?.initial_estimated_value) {
+      const parsed = parseFloat(String(input.fieldValues.initial_estimated_value).replace(/[^0-9.,]/g, "").replace(",", "."));
+      if (!isNaN(parsed)) {
+        dealVal = parsed;
+      }
+    }
+
+    if (isTargetWon) {
+      const osNumber = input.fieldValues?.os_number || input.fieldValues?.numero_os;
+      const osSeller = input.fieldValues?.os_seller || input.fieldValues?.vendedor_os || input.fieldValues?.seller_name;
+      const missingOS: string[] = [];
+      if (!osNumber) missingOS.push("Número da OS");
+      if (!osValRaw) missingOS.push("Valor da OS");
+      if (!osSeller) missingOS.push("Vendedor da OS");
+
+      if (missingOS.length > 0) {
+        throw new Error(
+          `Para cadastrar o lead diretamente no status FECHADO (GANHO), é obrigatório preencher os dados da Ordem de Serviço: ${missingOS.join(", ")}.`
+        );
+      }
+    }
+
     const card = await prisma.card.create({
       data: {
         pipeId: input.pipeId,
         currentPhaseId: targetPhaseId,
         title: cleanTitle,
-        dealValue: input.dealValue ?? 0,
+        dealValue: dealVal,
         priority: input.priority ?? "MEDIUM",
         dueDate: input.dueDate ? new Date(input.dueDate) : null,
         createdById: input.createdById,
@@ -222,6 +254,50 @@ export class CardService {
       throw new Error(`Campos obrigatórios não preenchidos para avançar para a fase "${targetPhase.name}": ${names}`);
     }
 
+    // Regra mandatória: FECHADO (GANHO) exige Número da OS, Valor da OS e Vendedor da OS
+    const isTargetWon = Boolean(targetPhase.isFinalWon || /fechado\s*ganho|ganho/i.test(targetPhase.name));
+    let finalDealValue = card.dealValue;
+
+    if (isTargetWon) {
+      const allFields = await prisma.field.findMany({ where: { pipeId: card.pipeId } });
+      const fieldIdToIdent = new Map(allFields.map((f) => [f.id, f.identifier.toLowerCase()]));
+
+      const valuesMap: Record<string, string> = {};
+      for (const uv of updatedValues) {
+        const ident = fieldIdToIdent.get(uv.fieldId);
+        if (ident && uv.value) {
+          valuesMap[ident] = uv.value.trim();
+        }
+      }
+      if (fieldValuesToFulfill) {
+        for (const [k, v] of Object.entries(fieldValuesToFulfill)) {
+          if (v) valuesMap[k.toLowerCase()] = String(v).trim();
+        }
+      }
+
+      const osNumber = valuesMap["os_number"] || valuesMap["numero_os"];
+      const osValueRaw = valuesMap["os_value"] || valuesMap["valor_os"] || valuesMap["sale_amount"];
+      const osSeller = valuesMap["os_seller"] || valuesMap["vendedor_os"] || valuesMap["seller_name"];
+
+      const missingOS: string[] = [];
+      if (!osNumber) missingOS.push("Número da OS");
+      if (!osValueRaw) missingOS.push("Valor da OS");
+      if (!osSeller) missingOS.push("Vendedor da OS");
+
+      if (missingOS.length > 0) {
+        throw new Error(
+          `Para colocar o lead no status FECHADO (GANHO), é obrigatório preencher os dados da Ordem de Serviço da loja: ${missingOS.join(", ")}.`
+        );
+      }
+
+      if (osValueRaw) {
+        const parsed = parseFloat(String(osValueRaw).replace(/[^0-9.,]/g, "").replace(",", "."));
+        if (!isNaN(parsed) && parsed > 0) {
+          finalDealValue = parsed;
+        }
+      }
+    }
+
     // Mover de fase
     const oldPhaseId = card.currentPhaseId;
     const oldPhaseName = card.currentPhase.name;
@@ -229,6 +305,7 @@ export class CardService {
       where: { id: cardId },
       data: {
         currentPhaseId: targetPhaseId,
+        dealValue: finalDealValue,
         phaseEnteredAt: new Date(),
         slaStatus: "ON_TRACK",
       },
@@ -295,15 +372,6 @@ export class CardService {
     });
     if (!card) throw new Error("Card não encontrado.");
 
-    const closingFieldKeys = new Set(["os_number", "sale_amount", "sale_date"]);
-    const isWonPhase = Boolean(card.currentPhase?.isFinalWon || /ganho|fechado\s*ganho/i.test(card.currentPhase?.name || ""));
-
-    for (const [key, val] of Object.entries(fieldValues)) {
-      if (closingFieldKeys.has(key) && !isWonPhase && val !== undefined && val !== null && String(val).trim() !== "") {
-        throw new Error("Campos como número de OS, valor final, vendedor que atendeu e data da venda só podem ser preenchidos quando o lead fechar negócio.");
-      }
-    }
-
     const fields = await prisma.field.findMany({ where: { pipeId: card.pipeId } });
     const fieldMap = new Map(fields.map((f) => [f.identifier, f.id]));
 
@@ -344,8 +412,13 @@ export class CardService {
         update: { value: strVal },
       });
 
-      if (key === "sale_amount" || key === "deal_value" || key === "dealValue") {
-        const parsed = parseFloat(String(val).replace(/[^0-9.-]/g, ""));
+      if (key === "os_value" || key === "valor_os" || key === "sale_amount") {
+        const parsed = parseFloat(String(val).replace(/[^0-9.,]/g, "").replace(",", "."));
+        if (!isNaN(parsed) && parsed > 0) {
+          newDealValue = parsed;
+        }
+      } else if (newDealValue === null && (key === "initial_estimated_value" || key === "deal_value" || key === "dealValue" || key === "valor_estimado")) {
+        const parsed = parseFloat(String(val).replace(/[^0-9.,]/g, "").replace(",", "."));
         if (!isNaN(parsed)) {
           newDealValue = parsed;
         }
@@ -356,8 +429,9 @@ export class CardService {
     if (newDealValue !== null) {
       cardUpdates.dealValue = newDealValue;
     }
-    if (fieldValues.lead_name && fieldValues.lead_name.trim()) {
-      cardUpdates.title = fieldValues.lead_name.trim().toUpperCase();
+    const updatedLeadName = fieldValues.lead_name || fieldValues.nome_do_lead;
+    if (updatedLeadName && updatedLeadName.trim()) {
+      cardUpdates.title = updatedLeadName.trim().toUpperCase();
     }
     if (Object.keys(cardUpdates).length > 0) {
       await prisma.card.update({
