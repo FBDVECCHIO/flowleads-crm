@@ -58,6 +58,14 @@ export async function POST(req: Request) {
               const res = await processMetaLead(val.leadgen_id, undefined, {
                 destination_whatsapp: val.destination_whatsapp,
                 campaign_id: val.campaign_id,
+                campaign_name: val.campaign_name,
+                adset_id: val.adset_id,
+                adset_name: val.adset_name,
+                ad_id: val.ad_id,
+                ad_name: val.ad_name,
+                form_id: val.form_id,
+                form_name: val.form_name,
+                platform: val.platform || val.channel,
                 ...val.lead_data,
               });
               results.push(res);

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { Printer, Download, Copy, Check, ExternalLink, ShieldCheck, ArrowLeft } from "lucide-react";
@@ -124,14 +124,84 @@ export default function ProtocoloMetaPage() {
           </div>
 
           {/* Section 1 */}
-          <section className="space-y-3">
+          <section className="space-y-4">
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-2">
               <span className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-bold">1</span>
-              Visão Geral e Arquitetura do Fluxo
+              Visão Geral e Mapeamento da Hierarquia Meta Ads
             </h2>
             <p className="text-xs text-slate-600 leading-relaxed">
               O FlowLeads CRM implementa um endpoint de alta performance e resiliência (<code className="bg-slate-100 px-1 py-0.5 rounded text-slate-800">/api/webhooks/meta</code>) conectado à infraestrutura global da Meta (Facebook e Instagram). O lead gerado nos anúncios Instantâneos (Lead Ads) ou por clique no WhatsApp é capturado em menos de 1 segundo, gerando um card na coluna <strong>NOVO LEAD</strong> do vendedor correspondente.
             </p>
+
+            {/* Hierarquia Visual */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-2">
+              <div className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">
+                Mapeamento da Estrutura de Tráfego:
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-center">
+                <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase">Conta de Anúncios</span>
+                  <span className="font-bold text-slate-800 text-xs">Grupo Mário Neto</span>
+                </div>
+                <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] text-blue-500 font-bold block uppercase">Ciclo / Campanha</span>
+                  <span className="font-bold text-slate-800 text-xs">Campanha de Vendas</span>
+                </div>
+                <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] text-indigo-500 font-bold block uppercase">Grupo de Anúncios</span>
+                  <span className="font-bold text-slate-800 text-xs">Público / Loja</span>
+                </div>
+                <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] text-emerald-500 font-bold block uppercase">Anúncio / Criativo</span>
+                  <span className="font-bold text-slate-800 text-xs">Card "NOVO LEAD"</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tabela de Dados Extraídos */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
+                <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[10px]">
+                  <tr>
+                    <th className="p-2.5 border-b border-slate-200">Dado Capturado</th>
+                    <th className="p-2.5 border-b border-slate-200">Origem Meta Ads</th>
+                    <th className="p-2.5 border-b border-slate-200">Destino no FlowLeads</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-600">
+                  <tr>
+                    <td className="p-2.5 font-bold text-slate-800">Nome do Cliente</td>
+                    <td className="p-2.5 font-mono text-[11px]">full_name</td>
+                    <td className="p-2.5">Título do Card em UPPERCASE</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-bold text-slate-800">Telefone / WhatsApp</td>
+                    <td className="p-2.5 font-mono text-[11px]">phone_number</td>
+                    <td className="p-2.5">Telefone formatado com botão direto wa.me</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-bold text-slate-800">Ciclo / Campanha</td>
+                    <td className="p-2.5 font-mono text-[11px]">campaign_name</td>
+                    <td className="p-2.5">Campo Campanha e Tag visual no card</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-bold text-slate-800">Grupo de Anúncios</td>
+                    <td className="p-2.5 font-mono text-[11px]">adset_name</td>
+                    <td className="p-2.5">Comentário interno de auditoria de tráfego</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-bold text-slate-800">Anúncio / Criativo</td>
+                    <td className="p-2.5 font-mono text-[11px]">ad_name / ad_id</td>
+                    <td className="p-2.5">Comentário interno e rastreio de criativo</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-bold text-slate-800">Canal de Origem</td>
+                    <td className="p-2.5 font-mono text-[11px]">platform (fb / ig)</td>
+                    <td className="p-2.5">Identificação Instagram vs Facebook</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </section>
 
           {/* Section 2 */}

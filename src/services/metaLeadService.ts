@@ -10,9 +10,14 @@ export interface MetaWebhookPayload {
       value: {
         leadgen_id: string;
         form_id: string;
+        form_name?: string;
         ad_id?: string;
+        ad_name?: string;
         adset_id?: string;
+        adset_name?: string;
         campaign_id?: string;
+        campaign_name?: string;
+        platform?: string;
         destination_whatsapp?: string;
         created_time: number;
         lead_data?: {
@@ -76,6 +81,14 @@ export async function processMetaLead(
     dealValue?: number;
     destination_whatsapp?: string;
     campaign_id?: string;
+    campaign_name?: string;
+    adset_id?: string;
+    adset_name?: string;
+    ad_id?: string;
+    ad_name?: string;
+    form_id?: string;
+    form_name?: string;
+    platform?: string;
   }
 ): Promise<{ cardId: string; assignedToUserId: string | null }> {
   // 1. Resolve Pipe
@@ -170,7 +183,13 @@ export async function processMetaLead(
     } else if (ident.includes("mail")) {
       valToSet = overrideData?.email;
     } else if (ident.includes("campanha") || ident.includes("campaign")) {
-      valToSet = overrideData?.campaign_id ? overrideData.campaign_id.toUpperCase() : undefined;
+      valToSet = (overrideData?.campaign_name || overrideData?.campaign_id)?.toUpperCase();
+    } else if (ident.includes("grupo") || ident.includes("adset")) {
+      valToSet = (overrideData?.adset_name || overrideData?.adset_id)?.toUpperCase();
+    } else if (ident.includes("anuncio") || ident.includes("ad_name")) {
+      valToSet = (overrideData?.ad_name || overrideData?.ad_id)?.toUpperCase();
+    } else if (ident.includes("canal") || ident.includes("plataforma") || ident.includes("platform")) {
+      valToSet = overrideData?.platform ? overrideData.platform.toUpperCase() : "INSTAGRAM / META";
     }
 
     if (valToSet) {
@@ -216,13 +235,28 @@ export async function processMetaLead(
     });
   }
 
+  // Inserir comentário estruturado com rastreabilidade da Meta Ads
+  const campaignInfo = overrideData?.campaign_name || overrideData?.campaign_id || "NÃO ESPECIFICADA";
+  const adsetInfo = overrideData?.adset_name || overrideData?.adset_id || "GERAL / ABERTO";
+  const adInfo = overrideData?.ad_name || overrideData?.ad_id || "ANÚNCIO PADRÃO";
+  const platformInfo = (overrideData?.platform || "INSTAGRAM / META ADS").toUpperCase();
+  const formInfo = overrideData?.form_name || overrideData?.form_id || "FORMULÁRIO INSTANTÂNEO";
+
+  await prisma.cardComment.create({
+    data: {
+      cardId: card.id,
+      userId: assignedToUserId || undefined,
+      content: `🎯 DADOS DE ORIGEM DO ANÚNCIO (META ADS):\n• Ciclo / Campanha: ${campaignInfo}\n• Grupo de Anúncios: ${adsetInfo}\n• Anúncio / Criativo: ${adInfo}\n• Plataforma de Exibição: ${platformInfo}\n• Formulário: ${formInfo}\n• Lead ID Meta: ${leadgenId}`,
+    },
+  }).catch(() => {});
+
   // Log activity
   await prisma.cardActivity.create({
     data: {
       cardId: card.id,
       userId: assignedToUserId || undefined,
       actionType: "CREATED",
-      details: `Lead ingerido automaticamente via Meta Ads (leadgen_id: ${leadgenId}). Roteado para WhatsApp ${targetWhatsapp || "Padrão"}.`,
+      details: `Lead ingerido automaticamente via Meta Ads (leadgen_id: ${leadgenId}, campanha: ${campaignInfo}). Roteado para WhatsApp ${targetWhatsapp || "Padrão"}.`,
     },
   });
 
