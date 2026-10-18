@@ -261,7 +261,7 @@ export function KanbanColumn({
         </div>
       </div>
 
-      <div className="px-3 py-1.5 bg-slate-50 text-[11px] text-slate-500 flex items-center justify-between border-b border-slate-100 font-medium">
+      <div className="px-3 py-1.5 bg-slate-50 text-[11px] text-slate-500 flex items-center justify-between border-b border-slate-200 font-medium">
         <span>Total da Fase:</span>
         <span className="font-semibold text-slate-700">{formatCurrency(totalValue)}</span>
       </div>
@@ -270,7 +270,7 @@ export function KanbanColumn({
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
         onDrop={handleDrop}
-        className="flex-1 overflow-y-auto p-2.5 space-y-2 min-h-[150px] bg-slate-300/80 border-t border-slate-300 rounded-b-xl transition-colors"
+        className="flex-1 overflow-y-auto p-2.5 space-y-2 min-h-[150px] bg-slate-200/85 border-t border-slate-300/60 rounded-b-xl transition-colors"
       >
         {phaseCards.length > 0 ? (
           phaseCards.map((card) => (
