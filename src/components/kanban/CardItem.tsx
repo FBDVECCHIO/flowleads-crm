@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { CheckSquare, MessageSquare, AlertCircle, User, Megaphone, Globe } from "lucide-react";
 import { formatCurrency, maskPhone } from "@/lib/utils";
 import { CardContextMenu } from "./CardContextMenu";
@@ -29,6 +30,7 @@ export function CardItem({
   onApplyTag,
   onRenameCard,
 }: CardItemProps) {
+  const isDraggingRef = useRef(false);
   const currentPhaseIndex = phases.findIndex((p) => p.id === card.currentPhaseId);
   const nextPhase = phases[currentPhaseIndex + 1];
 
@@ -55,7 +57,19 @@ export function CardItem({
   const slaOverdue = card.slaStatus === "OVERDUE";
 
   const handleDragStart = (e: React.DragEvent) => {
+    isDraggingRef.current = true;
     e.dataTransfer.setData("text/plain", JSON.stringify({ cardId: card.id, sourcePhaseId: card.currentPhaseId }));
+  };
+
+  const handleDragEnd = () => {
+    setTimeout(() => {
+      isDraggingRef.current = false;
+    }, 150);
+  };
+
+  const handleCardClick = () => {
+    if (isDraggingRef.current) return;
+    onOpenCard(card);
   };
 
   const hasCustomColor = card.color && card.color !== "#ffffff";
@@ -105,7 +119,8 @@ export function CardItem({
     <div
       draggable
       onDragStart={handleDragStart}
-      onClick={() => onOpenCard(card)}
+      onDragEnd={handleDragEnd}
+      onClick={handleCardClick}
       style={hasCustomColor ? { borderLeftColor: card.color, borderLeftWidth: "4px" } : undefined}
       className="bg-white rounded-lg p-2.5 border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group select-none space-y-1.5 relative text-xs"
     >

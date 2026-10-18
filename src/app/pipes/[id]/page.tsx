@@ -193,32 +193,6 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
   };
 
   const handleMoveCard = async (cardId: string, targetPhaseId: string, fieldValues?: Record<string, string>) => {
-    const card = cards.find((c) => c.id === cardId) || selectedCard;
-    const currentPhase = pipe?.phases?.find((p: any) => p.id === card?.currentPhaseId);
-
-    // Regra de Negócio: Para movimentar saindo de Novo Lead para o próximo passo, é obrigatório loja e data/hora da visita
-    const isMovingOutOfInitial = (currentPhase?.order === 1 || /novo/i.test(currentPhase?.name || "")) &&
-      targetPhaseId !== currentPhase?.id;
-
-    if (isMovingOutOfInitial) {
-      const getVal = (id: string) => {
-        if (fieldValues && fieldValues[id]) return fieldValues[id];
-        const v = card?.values?.find((val: any) => val.field?.identifier === id);
-        return v?.value ? String(v.value).trim() : "";
-      };
-
-      const hasStore = Boolean(getVal("store_negotiated"));
-      const hasVisit = Boolean(getVal("estimated_visit_datetime"));
-
-      if (!hasStore || !hasVisit) {
-        alert("Atenção: Para movimentar o lead para o próximo passo, é OBRIGATÓRIO preencher a LOJA NEGOCIADA e a DATA E HORA DA VISITA À LOJA.\n\nO formulário do lead será aberto agora para preenchimento.");
-        if (card) {
-          handleOpenCard(card, "fields");
-        }
-        return;
-      }
-    }
-
     // Otimistic update
     setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, currentPhaseId: targetPhaseId } : c)));
 

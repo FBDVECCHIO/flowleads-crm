@@ -216,24 +216,6 @@ export class CardService {
       throw new Error(`Campos obrigatórios não preenchidos para avançar para a fase "${targetPhase.name}": ${names}`);
     }
 
-    // Regra de Negócio Ótica FlowLeads: Para movimentar o lead saindo da fase inicial para o próximo passo,
-    // é obrigatório que a Loja Negociada e a Data/Hora da Visita estejam preenchidos.
-    const isMovingOutOfInitial = (card.currentPhase.order === 1 || /novo/i.test(card.currentPhase.name)) &&
-      targetPhaseId !== card.currentPhaseId;
-
-    if (isMovingOutOfInitial) {
-      const allFields = await prisma.field.findMany({ where: { pipeId: card.pipeId } });
-      const storeField = allFields.find((f) => f.identifier === "store_negotiated");
-      const visitField = allFields.find((f) => f.identifier === "estimated_visit_datetime");
-
-      const hasStore = storeField && updatedValues.some((v) => v.fieldId === storeField.id && v.value && v.value.trim().length > 0);
-      const hasVisit = visitField && updatedValues.some((v) => v.fieldId === visitField.id && v.value && v.value.trim().length > 0);
-
-      if (!hasStore || !hasVisit) {
-        throw new Error("Para movimentar o lead para o próximo passo, é obrigatório preencher a Loja Negociada e a Data/Hora da Visita à Loja.");
-      }
-    }
-
     // Mover de fase
     const oldPhaseId = card.currentPhaseId;
     const oldPhaseName = card.currentPhase.name;
@@ -289,7 +271,7 @@ export class CardService {
     });
     if (!card) throw new Error("Card não encontrado.");
 
-    const closingFieldKeys = new Set(["os_number", "sale_amount", "seller_name", "sale_date"]);
+    const closingFieldKeys = new Set(["os_number", "sale_amount", "sale_date"]);
     const isWonPhase = Boolean(card.currentPhase?.isFinalWon || /ganho|fechado\s*ganho/i.test(card.currentPhase?.name || ""));
 
     for (const [key, val] of Object.entries(fieldValues)) {

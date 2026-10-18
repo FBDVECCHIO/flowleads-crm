@@ -412,7 +412,7 @@ export function CardDrawer({
               {/* Grid Compacto de Campos */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {(() => {
-                  const closingFieldKeys = new Set(["os_number", "sale_amount", "seller_name", "sale_date"]);
+                  const closingFieldKeys = new Set(["os_number", "sale_amount", "sale_date"]);
                   const isWonPhase = Boolean(currentPhase?.isFinalWon || /ganho|fechado\s*ganho/i.test(currentPhase?.name || ""));
 
                   return visibleFields.map((field) => {
