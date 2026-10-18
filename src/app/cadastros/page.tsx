@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { maskPhone } from "@/lib/utils";
@@ -120,6 +120,14 @@ export default function CadastrosPage() {
   const [labels, setLabels] = useState<LabelItem[]>([]);
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [checklistItems, setChecklistItems] = useState<ChecklistItemModel[]>([]);
+  const [expandedStores, setExpandedStores] = useState<Record<string, boolean>>({});
+
+  const toggleStoreExpand = (storeId: string) => {
+    setExpandedStores((prev) => ({
+      ...prev,
+      [storeId]: !prev[storeId],
+    }));
+  };
 
   // Estados de feedback
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -436,6 +444,11 @@ export default function CadastrosPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao salvar etiqueta.");
+      if (editingItem) {
+        setLabels((prev) => prev.map((l) => (l.id === data.id ? data : l)));
+      } else {
+        setLabels((prev) => [...prev, data]);
+      }
       showSuccess(editingItem ? "Etiqueta atualizada!" : "Etiqueta criada!");
       setModalType(null);
       await fetchData();
@@ -450,7 +463,11 @@ export default function CadastrosPage() {
     if (!confirm(`Deseja realmente remover a etiqueta "${name}"?`)) return;
     try {
       const res = await fetch(`/api/labels/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Erro ao remover etiqueta.");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Erro ao remover etiqueta.");
+      }
+      setLabels((prev) => prev.filter((l) => l.id !== id));
       showSuccess("Etiqueta removida!");
       await fetchData();
     } catch (err: any) {
@@ -652,95 +669,89 @@ export default function CadastrosPage() {
           </div>
         )}
 
-        {/* Barra de Abas Principais */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-2">
-          <div className="flex flex-wrap items-center gap-2">
+        {/* Barra de Abas Principais - Linha única sem quebras */}
+        <div className="flex flex-nowrap items-center justify-between gap-2 border-b border-slate-200 pb-2 overflow-x-auto whitespace-nowrap">
+          <div className="flex flex-nowrap items-center gap-1.5 shrink-0">
             <button
               onClick={() => { setActiveTab("lojas"); setSearchTerm(""); }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === "lojas"
                   ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                   : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
-              <Building2 className="w-4 h-4" />
-              <span>Lojas Físicas</span>
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+              <span>Lojas</span>
+              <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-white/20">
                 {stores.length}
               </span>
             </button>
 
             <button
               onClick={() => { setActiveTab("vendedores"); setSearchTerm(""); }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === "vendedores"
                   ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                   : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
-              <Users className="w-4 h-4" />
-              <span>Vendedores & Captadores</span>
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+              <span>Vendedores</span>
+              <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-white/20">
                 {sellers.length}
               </span>
             </button>
 
             <button
               onClick={() => { setActiveTab("campanhas"); setSearchTerm(""); }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === "campanhas"
                   ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                   : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
-              <Megaphone className="w-4 h-4" />
-              <span>Campanhas Meta Ads</span>
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+              <span>Campanhas Meta</span>
+              <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-white/20">
                 {campaigns.length}
               </span>
             </button>
 
             <button
               onClick={() => { setActiveTab("tags"); setSearchTerm(""); }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === "tags"
                   ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                   : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
-              <Tag className="w-4 h-4" />
-              <span>Tags / Etiquetas</span>
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+              <span>Tags</span>
+              <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-white/20">
                 {labels.length}
               </span>
             </button>
 
             <button
               onClick={() => { setActiveTab("mensagens"); setSearchTerm(""); }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === "mensagens"
                   ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                   : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
-              <Bell className="w-4 h-4" />
-              <span>Comunicados (Sino)</span>
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+              <span>Comunicados</span>
+              <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-white/20">
                 {messages.length}
               </span>
             </button>
 
             <button
               onClick={() => { setActiveTab("checklist"); setSearchTerm(""); }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === "checklist"
                   ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                   : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
-              <CheckSquare className="w-4 h-4" />
               <span>Checklist</span>
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+              <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-white/20">
                 {checklistItems.length}
               </span>
             </button>
@@ -748,11 +759,11 @@ export default function CadastrosPage() {
 
           <Link
             href="/users"
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 transition-colors whitespace-nowrap shrink-0"
           >
-            <ShieldCheck className="w-4 h-4 text-blue-600" />
+            <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
             <span>Gerenciar Logins & Metas</span>
-            <ExternalLink className="w-3 h-3 opacity-70" />
+            <ExternalLink className="w-3 h-3 opacity-70 shrink-0" />
           </Link>
         </div>
 
@@ -791,7 +802,6 @@ export default function CadastrosPage() {
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
                     <th className="py-3 px-4">Nome da Loja</th>
-                    <th className="py-3 px-4">Descrição / Endereço</th>
                     <th className="py-3 px-4">Telefone / WhatsApp</th>
                     <th className="py-3 px-4 text-center">Vendedores Vinculados</th>
                     <th className="py-3 px-4 text-center">Status</th>
@@ -802,59 +812,78 @@ export default function CadastrosPage() {
                   {stores
                     .filter((s) => s.name.toLowerCase().includes(searchTerm.toLowerCase()) || (s.description && s.description.toLowerCase().includes(searchTerm.toLowerCase())))
                     .map((s) => (
-                      <tr key={s.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-blue-600" />
-                          <span>{s.name}</span>
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-600 max-w-xs truncate">
-                          {s.description || <span className="text-slate-400 italic">Sem endereço</span>}
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-700 font-mono">
-                          {s.phone ? (
-                            <span className="flex items-center gap-1">
-                              <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                              {s.phone}
+                      <React.Fragment key={s.id}>
+                        <tr className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-2">
+                            <Building2 className="w-4 h-4 text-blue-600 shrink-0" />
+                            <span className="truncate">{s.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => toggleStoreExpand(s.id)}
+                              className="ml-1.5 px-1.5 py-0.5 rounded text-[11px] font-bold bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200 transition-colors shrink-0"
+                              title={expandedStores[s.id] ? "Ocultar descrição / endereço" : "Exibir descrição / endereço"}
+                            >
+                              {expandedStores[s.id] ? "−" : "+"}
+                            </button>
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-700 font-mono">
+                            {s.phone ? (
+                              <span className="flex items-center gap-1">
+                                <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                                {s.phone}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 italic">Não informado</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-center font-semibold text-slate-700">
+                            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                              {s._count?.sellers ?? (s.sellers ? s.sellers.length : 0)} colaboradores
                             </span>
-                          ) : (
-                            <span className="text-slate-400 italic">Não informado</span>
-                          )}
-                        </td>
-                        <td className="py-3.5 px-4 text-center font-semibold text-slate-700">
-                          <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                            {s._count?.sellers ?? (s.sellers ? s.sellers.length : 0)} colaboradores
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-center">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            s.isActive ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-500"
-                          }`}>
-                            {s.isActive ? "Ativa" : "Inativa"}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => handleOpenStoreModal(s)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50"
-                              title="Editar Loja"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteStore(s.id, s.name)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"
-                              title="Excluir Loja"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              s.isActive ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-500"
+                            }`}>
+                              {s.isActive ? "Ativa" : "Inativa"}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => handleOpenStoreModal(s)}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                                title="Editar Loja"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteStore(s.id, s.name)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                title="Excluir Loja"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {expandedStores[s.id] && (
+                          <tr className="bg-blue-50/50 border-b border-blue-100/80 animate-in fade-in duration-150">
+                            <td colSpan={5} className="py-2.5 px-6 text-xs text-slate-700">
+                              <div className="flex items-start gap-2">
+                                <span className="font-bold text-slate-800 shrink-0">Descrição / Endereço:</span>
+                                <span className="text-slate-600">
+                                  {s.description || <span className="italic text-slate-400">Nenhum endereço ou descrição cadastrado para esta unidade.</span>}
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     ))}
                   {stores.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400">
+                      <td colSpan={5} className="py-8 text-center text-slate-400">
                         Nenhuma loja física cadastrada no momento.
                       </td>
                     </tr>

@@ -36,17 +36,17 @@ export function GoalRankingTable({ ranking = [], currentUserId }: GoalRankingTab
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
-              <th className="py-3.5 px-4 w-16 text-center">Posição</th>
-              <th className="py-3.5 px-4">Vendedor / Consultor</th>
-              <th className="py-3.5 px-4">WhatsApp Comercial</th>
-              <th className="py-3.5 px-4 text-right">Meta Mensal</th>
-              <th className="py-3.5 px-4 text-right">Meta Diária</th>
-              <th className="py-3.5 px-4 text-right">Realizado (R$)</th>
-              <th className="py-3.5 px-4 text-center">Deals</th>
-              <th className="py-3.5 px-4 text-right">Atingimento</th>
-              <th className="py-3.5 px-4 text-center">Ritmo (Pacing)</th>
-              <th className="py-3.5 px-4 text-center">Status</th>
+            <tr className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 font-bold uppercase tracking-wider text-[11px] whitespace-nowrap">
+              <th className="py-3.5 px-4 w-16 text-center whitespace-nowrap">Posição</th>
+              <th className="py-3.5 px-4 whitespace-nowrap">Vendedor / Consultor</th>
+              <th className="py-3.5 px-4 whitespace-nowrap">WhatsApp Comercial</th>
+              <th className="py-3.5 px-4 text-right whitespace-nowrap">Meta</th>
+              <th className="py-3.5 px-4 text-right whitespace-nowrap">Meta/Dia</th>
+              <th className="py-3.5 px-4 text-right whitespace-nowrap">Realizado (R$)</th>
+              <th className="py-3.5 px-4 text-center whitespace-nowrap">Deals</th>
+              <th className="py-3.5 px-4 text-right whitespace-nowrap">Atingimento</th>
+              <th className="py-3.5 px-4 text-center whitespace-nowrap">Ritmo</th>
+              <th className="py-3.5 px-4 text-center whitespace-nowrap">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -124,18 +124,18 @@ export function GoalRankingTable({ ranking = [], currentUserId }: GoalRankingTab
                     )}
                   </td>
 
-                  {/* Meta Mensal (R$) */}
-                  <td className="py-4 px-4 text-right font-medium text-slate-600">
+                  {/* Meta (R$) */}
+                  <td className="py-4 px-4 text-right font-medium text-slate-600 whitespace-nowrap">
                     {formatCurrency(rep.targetAmount)}
                   </td>
 
-                  {/* Meta Diária (R$) */}
-                  <td className="py-4 px-4 text-right font-semibold text-blue-600">
+                  {/* Meta/Dia (R$) */}
+                  <td className="py-4 px-4 text-right font-semibold text-blue-600 whitespace-nowrap">
                     {formatCurrency(rep.dailyTargetNormal || (rep.targetAmount / (rep.workingDaysPerMonth || 22)))}
                   </td>
 
                   {/* Realizado (R$) */}
-                  <td className="py-4 px-4 text-right font-bold text-slate-900">
+                  <td className="py-4 px-4 text-right font-bold text-slate-900 whitespace-nowrap">
                     {formatCurrency(rep.currentAmount)}
                   </td>
 

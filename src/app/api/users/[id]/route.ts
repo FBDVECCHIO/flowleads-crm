@@ -136,9 +136,12 @@ export async function DELETE(
       return Response.json({ error: "Não é permitido excluir o próprio usuário logado." }, { status: 400, headers: noStoreHeaders });
     }
 
-    await prisma.user.delete({
-      where: { id: resolvedParams.id },
-    });
+    await prisma.$transaction([
+      prisma.cardAssignee.deleteMany({ where: { userId: resolvedParams.id } }),
+      prisma.cardComment.updateMany({ where: { userId: resolvedParams.id }, data: { userId: null } }),
+      prisma.card.updateMany({ where: { createdById: resolvedParams.id }, data: { createdById: null } }),
+      prisma.user.delete({ where: { id: resolvedParams.id } }),
+    ]);
 
     return Response.json({ success: true, message: "Usuário excluído com sucesso." }, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {

@@ -110,7 +110,7 @@ export function CardItem({
       className="bg-white rounded-lg p-2.5 border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group select-none space-y-1.5 relative text-xs"
     >
       {/* 1. TOPO DO CARD: Nome do lead (principal) ao lado dos 3 pontinhos */}
-      <div className="flex items-center justify-between gap-1">
+      <div className="flex items-center justify-between gap-1 whitespace-nowrap">
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <span
             className="font-bold text-xs text-slate-900 group-hover:text-blue-600 transition-colors uppercase truncate tracking-tight"
@@ -132,6 +132,7 @@ export function CardItem({
             card={card}
             phases={phases}
             labels={labels}
+            onOpenCard={() => onOpenCard(card)}
             onColorChange={(color) => onColorChange?.(card.id, color)}
             onMovePhase={(targetPhaseId) => onMoveCard(card.id, targetPhaseId)}
             onApplyTag={(labelId) => onApplyTag?.(card.id, labelId)}
@@ -143,8 +144,8 @@ export function CardItem({
       </div>
 
       {/* 2. DEPOIS DO NOME: WhatsApp formatado com link direto para chamar */}
-      <div className="flex items-center justify-between text-[11px] bg-slate-50 rounded px-2 py-1 border border-slate-100">
-        <div className="flex items-center gap-1 text-slate-700 font-mono text-[11px] truncate">
+      <div className="flex items-center justify-between text-[11px] bg-slate-50 rounded px-2 py-1 border border-slate-100 whitespace-nowrap">
+        <div className="flex items-center gap-1 text-slate-700 font-mono text-[11px] truncate min-w-0">
           <MessageSquare className="w-3 h-3 text-emerald-600 shrink-0" />
           <span className="truncate">{clientPhone}</span>
         </div>
@@ -154,7 +155,7 @@ export function CardItem({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline px-1.5 py-0.5 bg-emerald-50 rounded border border-emerald-200 transition-colors shrink-0 ml-1"
+            className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline px-1.5 py-0.5 bg-emerald-50 rounded border border-emerald-200 transition-colors shrink-0 ml-1 whitespace-nowrap"
             title="Abrir WhatsApp Web"
           >
             Chamar
@@ -163,49 +164,49 @@ export function CardItem({
       </div>
 
       {/* 3. ABAIXO DO WHATSAPP: Origem do lead */}
-      <div className="flex items-center gap-1 text-[10px] text-slate-600 truncate">
+      <div className="flex items-center gap-1 text-[10px] text-slate-600 truncate whitespace-nowrap">
         <Globe className="w-3 h-3 text-slate-400 shrink-0" />
-        <span className="text-slate-400 font-medium">Origem:</span>
+        <span className="text-slate-400 font-medium shrink-0">Origem:</span>
         <span className="font-semibold text-slate-700 uppercase truncate" title={origin}>
           {origin}
         </span>
       </div>
 
       {/* 4. ABAIXO DA ORIGEM: Campanha atrelada via META ou manual */}
-      <div className="flex items-center gap-1 text-[10px] text-purple-700 bg-purple-50/80 px-1.5 py-0.5 rounded border border-purple-100 font-medium truncate">
+      <div className="flex items-center gap-1 text-[10px] text-purple-700 bg-purple-50/80 px-1.5 py-0.5 rounded border border-purple-100 font-medium truncate whitespace-nowrap">
         <Megaphone className="w-3 h-3 text-purple-600 shrink-0" />
-        <span className="text-slate-500 text-[9px] font-normal">Campanha:</span>
+        <span className="text-slate-500 text-[9px] font-normal shrink-0">Campanha:</span>
         <span className="font-semibold truncate uppercase" title={campaign}>
           {campaign}
         </span>
       </div>
 
       {/* 5. ABAIXO DA ORIGEM/CAMPANHA: Usuário responsável */}
-      <div className="flex items-center justify-between gap-1 text-[10px] text-slate-600 truncate">
-        <div className="flex items-center gap-1 truncate">
+      <div className="flex items-center justify-between gap-1 text-[10px] text-slate-600 truncate whitespace-nowrap">
+        <div className="flex items-center gap-1 truncate min-w-0">
           <User className="w-3 h-3 text-blue-600 shrink-0" />
-          <span className="text-slate-400 font-medium">Resp:</span>
+          <span className="text-slate-400 font-medium shrink-0">Resp:</span>
           <span className="font-semibold text-slate-700 uppercase truncate" title={responsibleUser}>
             {responsibleUser}
           </span>
         </div>
 
         {card.dealValue > 0 && (
-          <span className="font-bold text-emerald-700 text-[10px] shrink-0 font-mono">
+          <span className="font-bold text-emerald-700 text-[10px] shrink-0 font-mono whitespace-nowrap ml-1">
             {formatCurrency(card.dealValue)}
           </span>
         )}
       </div>
 
       {/* 6. BASE DO CARD: Tags na base e ao lado o contador em cinza baixo do Checklist */}
-      <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100 flex-wrap">
+      <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100 flex-nowrap whitespace-nowrap">
         {/* As tags devem ficar na base do card */}
-        <div className="flex flex-wrap gap-1 items-center flex-1 min-w-0">
+        <div className="flex flex-nowrap gap-1 items-center flex-1 min-w-0 overflow-hidden">
           {card.labels && card.labels.length > 0 ? (
             card.labels.map((cl: any) => (
               <span
                 key={cl.id}
-                className="text-[9px] font-semibold px-1.5 py-0.2 rounded text-white truncate max-w-[85px]"
+                className="text-[9px] font-semibold px-1.5 py-0.5 rounded text-white truncate max-w-[85px] shrink-0"
                 style={{ backgroundColor: cl.label.color }}
                 title={cl.label.name}
               >
@@ -219,11 +220,11 @@ export function CardItem({
 
         {/* Ao lado das tags o contador em cinza baixo do Checklist */}
         <div
-          className="flex items-center gap-1 text-slate-400 text-[10px] font-medium shrink-0"
+          className="flex items-center gap-1 text-slate-400 text-[10px] font-medium shrink-0 ml-1"
           title={`Checklist: ${checklistProgress.done} de ${checklistProgress.total} concluídos`}
         >
-          <CheckSquare className="w-3 h-3 text-slate-400" />
-          <span>
+          <CheckSquare className="w-3 h-3 text-slate-400 shrink-0" />
+          <span className="whitespace-nowrap">
             {checklistProgress.done}/{checklistProgress.total}
           </span>
         </div>

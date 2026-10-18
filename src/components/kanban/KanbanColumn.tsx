@@ -125,7 +125,7 @@ export function KanbanColumn({
     <div
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className="w-80 shrink-0 bg-slate-100/90 rounded-xl flex flex-col max-h-[calc(100vh-10rem)] border border-slate-200/80 shadow-sm transition-all"
+      className="w-72 shrink-0 bg-slate-100/90 rounded-xl flex flex-col max-h-[calc(100vh-10rem)] border border-slate-200/80 shadow-sm transition-all"
     >
       {/* Cabeçalho da Coluna com Governança e Ações de Movimentação */}
       <div

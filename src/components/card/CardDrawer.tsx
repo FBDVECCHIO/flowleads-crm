@@ -306,10 +306,7 @@ export function CardDrawer({
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm("Deseja realmente excluir este lead permanentemente?")) {
-                    onDeleteCard(card.id);
-                    onClose();
-                  }
+                  onDeleteCard(card.id);
                 }}
                 className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
                 title="Excluir lead"

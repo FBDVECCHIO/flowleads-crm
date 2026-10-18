@@ -16,6 +16,7 @@ export interface CardContextMenuProps {
   card: any;
   phases: any[];
   labels?: any[];
+  onOpenCard?: () => void;
   onColorChange?: (color: string) => void;
   onMovePhase?: (targetPhaseId: string) => void;
   onApplyTag?: (labelId: string) => void;
@@ -38,6 +39,7 @@ export function CardContextMenu({
   card,
   phases,
   labels = [],
+  onOpenCard,
   onColorChange,
   onMovePhase,
   onApplyTag,
@@ -100,7 +102,22 @@ export function CardContextMenu({
           onClick={(e) => e.stopPropagation()}
           className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-xl border border-slate-200 z-50 py-1 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-100"
         >
-          {/* Action: Renomear Card */}
+          {/* Action 0: Abrir e Editar Lead Completo */}
+          {onOpenCard && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                onOpenCard();
+              }}
+              className="w-full px-3 py-2 flex items-center gap-2 hover:bg-blue-50 text-blue-600 transition-colors text-left font-semibold border-b border-slate-100"
+            >
+              <Pencil className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+              <span>Editar dados do lead</span>
+            </button>
+          )}
+
+          {/* Action 1: Renomear Card Rápido */}
           <div className="relative">
             <button
               type="button"
@@ -110,8 +127,8 @@ export function CardContextMenu({
               }}
               className="w-full px-3 py-2 flex items-center gap-2 hover:bg-slate-50 transition-colors text-left font-medium"
             >
-              <Pencil className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-              <span>Renomear card</span>
+              <Pencil className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <span>Renomear título</span>
             </button>
 
             {isRenaming && (

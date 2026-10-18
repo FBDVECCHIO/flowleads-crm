@@ -411,6 +411,7 @@ export class CardService {
     await prisma.cardComment.deleteMany({ where: { cardId } });
     await prisma.cardActivity.deleteMany({ where: { cardId } });
     await prisma.cardAttachment.deleteMany({ where: { cardId } });
+    await prisma.emailOutbox.deleteMany({ where: { cardId } }).catch(() => {});
     await prisma.card.delete({ where: { id: cardId } });
   }
 

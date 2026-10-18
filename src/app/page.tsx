@@ -83,6 +83,7 @@ export default async function HomePage() {
       pipeId={defaultPipe?.id}
       userName={currentUser?.name || "Carlos Silva"}
       userRole={currentUser?.role || "ADMIN"}
+      allowedMenus={currentUser?.allowedMenus}
       orgName="Grupo Mário Neto"
     >
       {/* Dashboard Oficial de Gestão de Metas: Bem-vindo - [Nome] */}

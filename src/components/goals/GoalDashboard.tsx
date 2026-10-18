@@ -4,6 +4,7 @@ import Link from "next/link";
 import { GoalProgress } from "@/services/goalService";
 import { GoalThermometer } from "./GoalThermometer";
 import { GoalRankingTable } from "./GoalRankingTable";
+import MosaicLens from "@/components/ui/MosaicLens";
 import { formatCurrency } from "@/lib/utils";
 import { 
   Sparkles, 
@@ -57,8 +58,26 @@ export function GoalDashboard({
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
-      {/* 1. Banner de Boas-vindas Personalizado */}
-      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+      {/* 1. Banner de Boas-vindas Personalizado com Fundo Interativo MosaicLens */}
+      <div className="rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border border-blue-900/40 bg-slate-950">
+        {/* Efeito Visual Interativo WebGL MosaicLens */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <MosaicLens
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+            minWidth="100%"
+            minHeight="100%"
+            background="#00091d"
+            color1="#033DAD"
+            color2="#00194A"
+            speed={70}
+            size={140}
+            tileSize={12}
+            reach={240}
+          />
+          {/* Overlay de gradiente suave para garantir legibilidade impecável dos textos brancos */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-950/85 via-blue-900/65 to-indigo-950/80 pointer-events-none" />
+        </div>
+
         <div className="relative z-10 max-w-3xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-semibold backdrop-blur-sm border border-white/20">
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
@@ -67,7 +86,7 @@ export function GoalDashboard({
             <span className="text-blue-100">Expediente Comercial Ativo</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow-sm">
             Bem-vindo - {userName}
           </h1>
 
@@ -110,8 +129,8 @@ export function GoalDashboard({
           </div>
         </div>
 
-        {/* Decoração visual de fundo */}
-        <div className="absolute -right-10 -bottom-10 w-64 h-64 rounded-full bg-white/5 pointer-events-none blur-2xl"></div>
+        {/* Decoração sutil de luz */}
+        <div className="absolute -right-10 -bottom-10 w-64 h-64 rounded-full bg-blue-500/10 pointer-events-none blur-3xl"></div>
       </div>
 
       {/* 2. Grid Principal de KPIs de Metas */}

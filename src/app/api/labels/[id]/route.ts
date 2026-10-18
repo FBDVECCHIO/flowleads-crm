@@ -17,12 +17,17 @@ export async function PUT(
     const resolvedParams = await Promise.resolve(params);
     const body = await req.json();
 
+    const data: { name?: string; color?: string } = {};
+    if (body.name !== undefined && typeof body.name === "string") {
+      data.name = body.name.trim().toUpperCase();
+    }
+    if (body.color !== undefined && typeof body.color === "string") {
+      data.color = body.color.trim();
+    }
+
     const updated = await prisma.label.update({
       where: { id: resolvedParams.id },
-      data: {
-        name: body.name !== undefined ? body.name.trim() : undefined,
-        color: body.color !== undefined ? body.color.trim() : undefined,
-      },
+      data,
     });
 
     return Response.json(updated, { status: 200, headers: noStoreHeaders });
@@ -44,9 +49,17 @@ export async function DELETE(
 ) {
   try {
     const resolvedParams = await Promise.resolve(params);
-    await prisma.label.delete({
-      where: { id: resolvedParams.id },
-    });
+    const labelId = resolvedParams.id;
+
+    await prisma.$transaction([
+      prisma.cardLabel.deleteMany({
+        where: { labelId },
+      }),
+      prisma.label.delete({
+        where: { id: labelId },
+      }),
+    ]);
+
     return Response.json({ success: true }, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
     return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });

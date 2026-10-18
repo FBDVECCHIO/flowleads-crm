@@ -44,6 +44,21 @@ export function Sidebar({
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [systemMessages, setSystemMessages] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [liveAllowedMenus, setLiveAllowedMenus] = useState<string | undefined>(allowedMenus);
+  const [liveUserRole, setLiveUserRole] = useState<string>(userRole);
+  const [liveUserName, setLiveUserName] = useState<string>(userName);
+
+  useEffect(() => {
+    if (allowedMenus !== undefined) setLiveAllowedMenus(allowedMenus);
+  }, [allowedMenus]);
+
+  useEffect(() => {
+    if (userRole) setLiveUserRole(userRole);
+  }, [userRole]);
+
+  useEffect(() => {
+    if (userName) setLiveUserName(userName);
+  }, [userName]);
 
   useEffect(() => {
     setMounted(true);
@@ -62,6 +77,20 @@ export function Sidebar({
 
     // Carregar mensagens do sistema para o Sino
     fetchMessages();
+
+    // Sincronizar permissões de menus e perfil do usuário autenticado
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.user) {
+          if (data.user.allowedMenus !== undefined && data.user.allowedMenus !== null) {
+            setLiveAllowedMenus(data.user.allowedMenus);
+          }
+          if (data.user.role) setLiveUserRole(data.user.role);
+          if (data.user.name) setLiveUserName(data.user.name);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const fetchMessages = async () => {
@@ -207,12 +236,19 @@ export function Sidebar({
   ];
 
   const visibleNavItems = navItems.filter((item) => {
-    if (!item.roles.includes(userRole)) return false;
-    if (userRole === "MEMBER" && allowedMenus) {
-      const allowedList = allowedMenus.split(",").map((s) => s.trim().toLowerCase());
-      return allowedList.includes(item.key);
+    const currentRole = liveUserRole || userRole;
+    if (currentRole === "ADMIN") return true;
+
+    const currentAllowed = liveAllowedMenus !== undefined ? liveAllowedMenus : allowedMenus;
+    if (currentAllowed !== undefined && currentAllowed !== null) {
+      const allowedList = currentAllowed
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+      return allowedList.includes(item.key.toLowerCase());
     }
-    return true;
+
+    return item.roles.includes(currentRole);
   });
 
   return (
@@ -334,7 +370,7 @@ export function Sidebar({
         </div>
 
         {/* Navegação Principal */}
-        <div className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
+        <div className={`flex-1 py-3 px-2 space-y-1 ${isCollapsed ? "overflow-visible" : "overflow-y-auto"}`}>
           {!isCollapsed && (
             <div className="px-3 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Navegação Comercial
@@ -347,6 +383,7 @@ export function Sidebar({
               <div key={item.label} className="relative group">
                 <Link
                   href={item.href}
+                  title={isCollapsed ? item.label : undefined}
                   className={`flex items-center rounded-lg text-xs font-medium transition-all ${
                     isCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"
                   } ${
