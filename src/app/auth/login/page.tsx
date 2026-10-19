@@ -79,7 +79,10 @@ export default function LoginPage() {
               required
               placeholder="Digite seu usuário"
               autoComplete="username"
-              className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white text-slate-900 transition-all placeholder:text-slate-400 font-medium"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white text-slate-900 transition-all placeholder:text-slate-400 font-medium normal-case"
             />
           </div>
 
@@ -96,7 +99,10 @@ export default function LoginPage() {
                 required
                 placeholder="Digite sua senha"
                 autoComplete="current-password"
-                className="w-full pl-3.5 pr-10 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white text-slate-900 transition-all placeholder:text-slate-400 font-medium"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                className="w-full pl-3.5 pr-10 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white text-slate-900 transition-all placeholder:text-slate-400 font-medium normal-case"
               />
               <button
                 type="button"

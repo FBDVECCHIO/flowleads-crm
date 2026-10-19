@@ -579,7 +579,10 @@ export default function UsersPage() {
                       placeholder="Ex: carlos ou carlos@flowleads.com"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 normal-case"
                     />
                     <span className="text-[10px] text-slate-400 mt-0.5 block">Nome usado para entrar no FlowLeads</span>
                   </div>
@@ -598,7 +601,10 @@ export default function UsersPage() {
                         placeholder={editingUser ? "Deixe em branco para manter" : "Mínimo 6 caracteres"}
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        className="w-full pl-3 pr-9 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        className="w-full pl-3 pr-9 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 normal-case"
                       />
                       <button
                         type="button"

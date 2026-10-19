@@ -96,7 +96,7 @@ export function CardDrawer({
 
   const handleSaveTitle = async () => {
     if (!currentTitle.trim()) return;
-    const cleanTitle = currentTitle.trim().toUpperCase();
+    const cleanTitle = currentTitle.trim();
     try {
       if (onRenameCard) {
         await onRenameCard(card.id, cleanTitle);
@@ -194,8 +194,6 @@ export function CardDrawer({
     let cleanVal = value;
     if (identifier.includes("phone")) {
       cleanVal = maskPhone(cleanVal);
-    } else if (!identifier.includes("email") && !identifier.includes("url") && !identifier.includes("link")) {
-      cleanVal = cleanVal.toUpperCase();
     }
     setFormValues((prev) => ({ ...prev, [identifier]: cleanVal }));
   };
@@ -206,7 +204,7 @@ export function CardDrawer({
     setSaveSuccess(false);
     try {
       if (formValues.lead_name && formValues.lead_name.trim()) {
-        const cleanName = formValues.lead_name.trim().toUpperCase();
+        const cleanName = formValues.lead_name.trim();
         card.title = cleanName;
         setCurrentTitle(cleanName);
       }
@@ -249,7 +247,7 @@ export function CardDrawer({
     e.preventDefault();
     if (!newComment.trim()) return;
     try {
-      await onAddComment(card.id, newComment.trim().toUpperCase());
+      await onAddComment(card.id, newComment.trim());
       setNewComment("");
     } catch (err: any) {
       setErrorMsg(err.message);
@@ -450,8 +448,8 @@ export function CardDrawer({
                       type="text"
                       value={formValues.lead_name || ""}
                       onChange={(e) => handleFieldChange("lead_name", e.target.value)}
-                      placeholder="Ex: CARLOS OLIVEIRA"
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 uppercase font-medium bg-white"
+                      placeholder="Ex: Carlos Oliveira"
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium bg-white"
                     />
                   </div>
 
@@ -569,7 +567,7 @@ export function CardDrawer({
                       value={formValues.observacoes || ""}
                       onChange={(e) => handleFieldChange("observacoes", e.target.value)}
                       placeholder="Histórico da conversa, preferências do cliente, armações desejadas..."
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 uppercase bg-white"
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                     />
                   </div>
                 </div>
@@ -596,7 +594,7 @@ export function CardDrawer({
                       value={formValues.os_number || ""}
                       onChange={(e) => handleFieldChange("os_number", e.target.value)}
                       placeholder="Ex: OS-45892"
-                      className="w-full px-2.5 py-1.5 text-xs border border-emerald-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 uppercase font-mono bg-white font-medium"
+                      className="w-full px-2.5 py-1.5 text-xs border border-emerald-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono bg-white font-medium"
                     />
                   </div>
 
@@ -670,7 +668,7 @@ export function CardDrawer({
                               rows={2}
                               value={formValues[field.identifier] || ""}
                               onChange={(e) => handleFieldChange(field.identifier, e.target.value)}
-                              className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white uppercase"
+                              className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                             />
                           ) : (
                             <input

@@ -29,11 +29,6 @@ body {
   background: #94a3b8;
 }
 
-/* Padronizacao visual UPPERCASE para campos de digitacao de texto no sistema */
-input:not([type="password"]):not([type="email"]):not([type="date"]):not([type="datetime-local"]):not([type="time"]):not([type="color"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]),
-textarea {
-  text-transform: uppercase;
-}
 
 /* ==========================================================================
    LIQUID GLASS DESIGN SYSTEM (FLOWLEADS EDITION — PANE COOKBOOK)
