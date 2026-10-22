@@ -72,15 +72,17 @@ export default function ProtocoloMetaPage() {
         </div>
 
         {/* Quick Config Card */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:hidden">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:hidden">
           <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">URL de Retorno (Callback URL)</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+              FLOWLEADS_WEBHOOK_URL (Cloudflare Worker)
+            </span>
             <div className="flex items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
               <code className="text-xs font-mono text-slate-800 truncate select-all">
-                https://flowleads-crm-blush.vercel.app/api/webhooks/meta
+                https://flowleads-crm-blush.vercel.app/api/webhooks/inbound
               </code>
               <button
-                onClick={() => copyToClipboard("https://flowleads-crm-blush.vercel.app/api/webhooks/meta", "url")}
+                onClick={() => copyToClipboard("https://flowleads-crm-blush.vercel.app/api/webhooks/inbound", "url")}
                 className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors shrink-0"
                 title="Copiar URL"
               >
@@ -90,7 +92,23 @@ export default function ProtocoloMetaPage() {
           </div>
 
           <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Token de Verificação (Verify Token)</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Meta Callback URL (Direto)</span>
+            <div className="flex items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+              <code className="text-xs font-mono text-slate-800 truncate select-all">
+                https://flowleads-crm-blush.vercel.app/api/webhooks/meta
+              </code>
+              <button
+                onClick={() => copyToClipboard("https://flowleads-crm-blush.vercel.app/api/webhooks/meta", "url")}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors shrink-0"
+                title="Copiar URL Meta"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Token de Verificação</span>
             <div className="flex items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
               <code className="text-xs font-mono text-slate-800 select-all font-bold">
                 flowleads_verify_token

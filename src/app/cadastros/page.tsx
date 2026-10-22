@@ -27,7 +27,11 @@ import {
   Sparkles,
   Info,
   CheckSquare,
-  RefreshCw
+  RefreshCw,
+  Copy,
+  Send,
+  Zap,
+  Code
 } from "lucide-react";
 
 interface StoreItem {
@@ -107,10 +111,60 @@ const PRESET_COLORS = [
   "#64748b", // Slate
 ];
 
+const CLOUDFLARE_WORKER_SAMPLE_CODE = [
+  "// Cloudflare Worker: Meta Ads & WhatsApp CTWA -> FlowLeads CRM",
+  "export default {",
+  "  async fetch(request, env, ctx) {",
+  '    if (request.method === "GET") {',
+  '      return new Response("FlowLeads Worker OK", { status: 200 });',
+  "    }",
+  '    if (request.method !== "POST") {',
+  '      return new Response("Method not allowed", { status: 405 });',
+  "    }",
+  "",
+  "    try {",
+  "      const payload = await request.json();",
+  "",
+  "      const leadData = {",
+  '        name: payload.name || payload.full_name || "Lead WhatsApp",',
+  '        phone: payload.phone || payload.phone_number || "",',
+  '        destination_whatsapp: payload.destination_whatsapp || payload.to || "",',
+  '        campaign_name: payload.campaign_name || payload.campaign || "Meta Ads CTWA",',
+  '        adset_name: payload.adset_name || "",',
+  '        ad_name: payload.ad_name || "",',
+  "        dealValue: Number(payload.dealValue) || 0,",
+  '        email: payload.email || "",',
+  '        notes: payload.notes || payload.message || "Lead via Cloudflare Worker"',
+  "      };",
+  "",
+  "      const webhookUrl = env.FLOWLEADS_WEBHOOK_URL",
+  '        || "https://flowleads-crm-blush.vercel.app/api/webhooks/inbound";',
+  "",
+  "      const res = await fetch(webhookUrl, {",
+  '        method: "POST",',
+  '        headers: { "Content-Type": "application/json" },',
+  "        body: JSON.stringify(leadData)",
+  "      });",
+  "",
+  "      const data = await res.json();",
+  "      return new Response(JSON.stringify(data), {",
+  "        status: res.status,",
+  '        headers: { "Content-Type": "application/json" }',
+  "      });",
+  "    } catch (err: any) {",
+  "      return new Response(JSON.stringify({ error: err.message }), {",
+  "        status: 500,",
+  '        headers: { "Content-Type": "application/json" }',
+  "      });",
+  "    }",
+  "  }",
+  "};"
+].join("\\n");
+
 export default function CadastrosPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [defaultPipeId, setDefaultPipeId] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"lojas" | "vendedores" | "campanhas" | "tags" | "mensagens" | "checklist">("lojas");
+  const [activeTab, setActiveTab] = useState<"lojas" | "vendedores" | "campanhas" | "tags" | "mensagens" | "checklist" | "integracoes">("lojas");
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -122,6 +176,19 @@ export default function CadastrosPage() {
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [checklistItems, setChecklistItems] = useState<ChecklistItemModel[]>([]);
   const [expandedStores, setExpandedStores] = useState<Record<string, boolean>>({});
+
+  // Estados de Integração e Webhook
+  const [copiedWebhookUrl, setCopiedWebhookUrl] = useState(false);
+  const [copiedWorkerCode, setCopiedWorkerCode] = useState(false);
+  const [testingWebhook, setTestingWebhook] = useState(false);
+  const [testResult, setTestResult] = useState<any>(null);
+  const [testLeadForm, setTestLeadForm] = useState({
+    name: "Lead Teste Meta Ads",
+    phone: "(11) 98888-7777",
+    destination_whatsapp: "",
+    campaign_name: "CAMPANHA MULTIFOCAL CENTRO",
+    dealValue: "1500",
+  });
 
   const toggleStoreExpand = (storeId: string) => {
     setExpandedStores((prev) => ({
@@ -651,6 +718,37 @@ export default function CadastrosPage() {
     }
   };
 
+  const handleTestWebhook = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTestingWebhook(true);
+    setTestResult(null);
+    try {
+      const res = await fetch("/api/webhooks/inbound", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: testLeadForm.name.trim(),
+          phone: testLeadForm.phone.trim(),
+          destination_whatsapp: testLeadForm.destination_whatsapp.trim() || undefined,
+          campaign_name: testLeadForm.campaign_name.trim(),
+          dealValue: Number(testLeadForm.dealValue) || 1500,
+          platform: "SIMULADOR / TESTE INTERNO",
+        }),
+      });
+      const data = await res.json();
+      setTestResult(data);
+      if (res.ok && data.success) {
+        showSuccess(`Lead de teste ingerido com sucesso! Card criado no Kanban (ID: ${data.cardId?.slice(0, 8)}...).`);
+      } else {
+        showError(data.error || "Erro no disparo de teste do webhook.");
+      }
+    } catch (err: any) {
+      showError(err.message || "Erro de rede ao conectar com o webhook.");
+    } finally {
+      setTestingWebhook(false);
+    }
+  };
+
   return (
     <AppShell
       pipeId={defaultPipeId}
@@ -790,6 +888,18 @@ export default function CadastrosPage() {
               <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-white/20">
                 {checklistItems.length}
               </span>
+            </button>
+
+            <button
+              onClick={() => { setActiveTab("integracoes"); setSearchTerm(""); }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                activeTab === "integracoes"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>Integrações & Webhook</span>
             </button>
           </div>
 
@@ -1471,6 +1581,324 @@ export default function CadastrosPage() {
                     </button>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ABA: INTEGRAÇÕES & WEBHOOK META ADS / CLOUDFLARE WORKER */}
+        {activeTab === "integracoes" && (
+          <div className="space-y-6">
+            {/* Header explicativo */}
+            <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-6 rounded-2xl shadow-lg border border-blue-900/40 relative overflow-hidden">
+              <div className="relative z-10 space-y-2 max-w-3xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-bold tracking-wide uppercase">
+                  <Zap className="w-3.5 h-3.5 text-amber-400" />
+                  Módulo de Ingestão de Leads
+                </div>
+                <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+                  Integrações & Webhook (Meta Ads & WhatsApp CTWA)
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  Conecte seu Cloudflare Worker ou campanhas da Meta diretamente ao FlowLeads. Quando um lead clica no anúncio ou envia mensagem no WhatsApp comercial, o card é criado automaticamente na fase inicial e atribuído ao consultor responsável.
+                </p>
+              </div>
+            </div>
+
+            {/* Grid de Configuração da URL de Webhook */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Card 1: FLOWLEADS_WEBHOOK_URL */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
+                      Variável de Ambiente Obrigatória
+                    </span>
+                    <h3 className="text-sm font-bold text-slate-900 mt-2">
+                      FLOWLEADS_WEBHOOK_URL
+                    </h3>
+                  </div>
+                  <span className="flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 rounded-full border border-emerald-200">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    Ativo & Liberado
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Utilize esta URL exata no seu script do Cloudflare Worker para encaminhar os dados dos leads recebidos:
+                </p>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-700">Endpoint Principal (Recomendado):</label>
+                  <div className="flex items-center justify-between gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl group hover:border-blue-400 transition-colors">
+                    <code className="text-xs font-mono text-slate-800 truncate select-all font-semibold">
+                      https://flowleads-crm-blush.vercel.app/api/webhooks/inbound
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText("https://flowleads-crm-blush.vercel.app/api/webhooks/inbound");
+                        setCopiedWebhookUrl(true);
+                        setTimeout(() => setCopiedWebhookUrl(false), 2000);
+                      }}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all shadow-sm"
+                      title="Copiar URL do Webhook"
+                    >
+                      {copiedWebhookUrl ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-300" />
+                          <span>Copiado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copiar</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <label className="text-[11px] font-bold text-slate-700">Endpoint Alternativo (Padrão v1):</label>
+                  <div className="flex items-center justify-between gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    <code className="text-[11px] font-mono text-slate-700 truncate select-all">
+                      https://flowleads-crm-blush.vercel.app/api/v1/webhook/inbound
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText("https://flowleads-crm-blush.vercel.app/api/v1/webhook/inbound");
+                        showSuccess("Endpoint v1 copiado para a área de transferência!");
+                      }}
+                      className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors shrink-0"
+                      title="Copiar Endpoint v1"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-[11px] text-slate-500">
+                  <span className="px-2 py-0.5 rounded bg-slate-100 font-mono font-bold text-slate-700">POST</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-100 font-mono text-slate-700">Content-Type: application/json</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700">Público (sem cookies de sessão)</span>
+                </div>
+              </div>
+
+              {/* Card 2: Regra Mandatória de Roteamento por WhatsApp */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md">
+                    Regra Mandatória de Distribuição
+                  </span>
+                  <h3 className="text-sm font-bold text-slate-900 mt-2">
+                    Roteamento por WhatsApp Comercial do Vendedor
+                  </h3>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  O roteamento não é baseado em bandeiras genéricas. O que determina o vendedor responsável é o <strong>contato de WhatsApp comercial</strong> configurado no grupo de anúncios da Meta Ads.
+                </p>
+
+                <div className="p-4 rounded-xl bg-purple-50/70 border border-purple-200/80 space-y-2 text-xs text-purple-950">
+                  <div className="font-bold flex items-center gap-1.5 text-purple-900">
+                    <Phone className="w-4 h-4 text-purple-600 shrink-0" />
+                    Como funciona o algoritmo:
+                  </div>
+                  <ol className="list-decimal pl-4 space-y-1.5 text-[11px] text-purple-900/90">
+                    <li>O Cloudflare Worker envia o campo <code>destination_whatsapp</code> com o número que recebeu o anúncio.</li>
+                    <li>O FlowLeads compara com o WhatsApp cadastrado dos vendedores (ex: final <strong>45</strong>).</li>
+                    <li>Se houver correspondência, o lead é atribuído <strong>diretamente ao vendedor dono do número</strong>.</li>
+                    <li>Caso o número não coincida com nenhum vendedor, o lead vai para o <strong>Supervisor</strong> para triagem.</li>
+                  </ol>
+                </div>
+
+                <div className="pt-2 flex items-center justify-between text-xs">
+                  <span className="text-slate-500">Vendedores com WhatsApp ativo:</span>
+                  <span className="font-bold text-slate-900">
+                    {sellers.filter((s) => Boolean(s.phone)).length} de {sellers.length} cadastrados
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Simulador ao Vivo & Código do Cloudflare Worker */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Simulador de Lead ao Vivo */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <Send className="w-4 h-4 text-blue-600" />
+                      Simulador de Lead (Teste ao Vivo)
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Dispare uma chamada real ao webhook para testar a recepção e o roteamento imediatamente
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleTestWebhook} className="space-y-3.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-700">Nome do Lead:</label>
+                      <input
+                        type="text"
+                        required
+                        value={testLeadForm.name}
+                        onChange={(e) => setTestLeadForm({ ...testLeadForm, name: e.target.value })}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        placeholder="Ex: Maria Silva"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-700">Telefone / WhatsApp do Lead:</label>
+                      <input
+                        type="text"
+                        required
+                        value={testLeadForm.phone}
+                        onChange={(e) => setTestLeadForm({ ...testLeadForm, phone: maskPhone(e.target.value) })}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        placeholder="(11) 98888-7777"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-700">
+                        WhatsApp de Destino (Vendedor / Anúncio):
+                      </label>
+                      <select
+                        value={testLeadForm.destination_whatsapp}
+                        onChange={(e) => setTestLeadForm({ ...testLeadForm, destination_whatsapp: e.target.value })}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                      >
+                        <option value="">Nenhum (Triagem pelo Supervisor)</option>
+                        {sellers.map((s) => (
+                          <option key={s.id} value={s.phone || ""}>
+                            {s.name} {s.phone ? `(${maskPhone(s.phone)})` : "(Sem telefone)"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-700">Campanha de Interesse:</label>
+                      <input
+                        type="text"
+                        value={testLeadForm.campaign_name}
+                        onChange={(e) => setTestLeadForm({ ...testLeadForm, campaign_name: e.target.value })}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        placeholder="Ex: CAMPANHA MULTIFOCAL VARILUX"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700">Valor Inicial Estimado (R$):</label>
+                    <input
+                      type="number"
+                      value={testLeadForm.dealValue}
+                      onChange={(e) => setTestLeadForm({ ...testLeadForm, dealValue: e.target.value })}
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      placeholder="1500"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={testingWebhook}
+                    className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+                  >
+                    {testingWebhook ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Disparando requisição ao webhook...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>🚀 Disparar Lead de Teste para o Webhook</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                {testResult && (
+                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-800">Resultado da Ingestão:</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                        HTTP 200 OK
+                      </span>
+                    </div>
+                    <pre className="p-2 bg-slate-900 text-emerald-400 rounded-lg text-[11px] font-mono overflow-x-auto">
+                      {JSON.stringify(testResult, null, 2)}
+                    </pre>
+                    {defaultPipeId && (
+                      <Link
+                        href={`/pipes/${defaultPipeId}`}
+                        className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-700 font-bold text-xs mt-1"
+                      >
+                        <span>Abrir Kanban de Leads para conferir o Card</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Código Pronto do Cloudflare Worker */}
+              <div className="bg-slate-900 text-slate-100 p-6 rounded-2xl border border-slate-800 shadow-sm flex flex-col justify-between space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider">
+                      <Code className="w-4 h-4" />
+                      Script do Cloudflare Worker (worker.js)
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(CLOUDFLARE_WORKER_SAMPLE_CODE);
+                        setCopiedWorkerCode(true);
+                        setTimeout(() => setCopiedWorkerCode(false), 2000);
+                      }}
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors border border-slate-700"
+                    >
+                      {copiedWorkerCode ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Código Copiado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copiar Código</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Copie e cole este script diretamente no seu Cloudflare Worker e configure a variável <code>FLOWLEADS_WEBHOOK_URL</code>:
+                  </p>
+                </div>
+
+                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-300 overflow-x-auto max-h-72 leading-relaxed select-all">
+                  <pre>{CLOUDFLARE_WORKER_SAMPLE_CODE}</pre>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+                  <Link
+                    href="/protocolo-meta"
+                    className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1.5"
+                  >
+                    <span>Ver Protocolo Técnico Completo Meta Ads</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

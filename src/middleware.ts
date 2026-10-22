@@ -6,6 +6,8 @@ const PUBLIC_PATHS = [
   "/auth/login",
   "/api/auth/login",
   "/api/webhooks/meta",
+  "/api/webhooks/inbound",
+  "/api/v1/webhook/inbound",
 ];
 
 function isPublicPath(pathname: string): boolean {
