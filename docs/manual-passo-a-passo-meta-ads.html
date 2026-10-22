@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Manual Passo a Passo Meta Ads & WhatsApp CTWA — FlowLeads CRM</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+    @page {
+      size: A4;
+      margin: 14mm 14mm 16mm 14mm;
+      @bottom-right {
+        content: "Página " counter(page) " de " counter(pages);
+        font-family: 'Inter', sans-serif;
+        font-size: 8pt;
+        color: #94a3b8;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #0f172a;
+      background-color: #ffffff;
+      line-height: 1.5;
+      font-size: 9.5pt;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .cover {
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 92vh;
+      padding: 30px 20px 20px 20px;
+    }
+
+    .cover-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #0284c7;
+      padding-bottom: 18px;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 11pt;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-badge span {
+      color: #38bdf8;
+    }
+
+    .doc-meta {
+      text-align: right;
+      font-size: 8.5pt;
+      color: #64748b;
+    }
+
+    .cover-body {
+      margin-top: 50px;
+    }
+
+    .doc-category {
+      display: inline-block;
+      text-transform: uppercase;
+      font-size: 8.5pt;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #0284c7;
+      background: #e0f2fe;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+
+    .cover-title {
+      font-size: 25pt;
+      font-weight: 800;
+      line-height: 1.15;
+      color: #0f172a;
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+
+    .cover-subtitle {
+      font-size: 12pt;
+      color: #475569;
+      line-height: 1.5;
+      margin-bottom: 30px;
+      max-width: 90%;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 25px;
+      padding: 16px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+    }
+
+    .meta-item {
+      font-size: 8.5pt;
+    }
+
+    .meta-item strong {
+      display: block;
+      color: #64748b;
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .meta-item span {
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    .cover-footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 8pt;
+      color: #64748b;
+    }
+
+    .section {
+      margin-bottom: 22px;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+
+    h2 {
+      font-size: 13pt;
+      font-weight: 800;
+      color: #0f172a;
+      border-bottom: 1.5px solid #cbd5e1;
+      padding-bottom: 6px;
+      margin-top: 20px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h2 .num {
+      background: #0284c7;
+      color: #ffffff;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8.5pt;
+      font-weight: 800;
+    }
+
+    h3 {
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin-top: 14px;
+      margin-bottom: 6px;
+    }
+
+    p {
+      margin-bottom: 8px;
+      color: #334155;
+      text-align: justify;
+    }
+
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 10px;
+      color: #334155;
+    }
+
+    li {
+      margin-bottom: 4px;
+    }
+
+    .flow-diagram {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 14px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8pt;
+      line-height: 1.45;
+      border: 1px solid #334155;
+    }
+
+    .flow-diagram .step-title {
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    .flow-diagram .step-desc {
+      color: #94a3b8;
+    }
+
+    .box-tip {
+      background-color: #f0fdf4;
+      border-left: 4px solid #16a34a;
+      border: 1px solid #bbf7d0;
+      border-left-width: 4px;
+      border-left-color: #16a34a;
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin: 12px 0;
+      font-size: 9pt;
+      color: #14532d;
+    }
+
+    .box-warning {
+      background-color: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      border: 1px solid #fde68a;
+      border-left-width: 4px;
+      border-left-color: #f59e0b;
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin: 12px 0;
+      font-size: 9pt;
+      color: #78350f;
+    }
+
+    .box-info {
+      background-color: #f0f9ff;
+      border-left: 4px solid #0284c7;
+      border: 1px solid #bae6fd;
+      border-left-width: 4px;
+      border-left-color: #0284c7;
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin: 12px 0;
+      font-size: 9pt;
+      color: #0369a1;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 16px 0;
+      font-size: 8.5pt;
+    }
+
+    th {
+      background-color: #0f172a;
+      color: #ffffff;
+      text-align: left;
+      padding: 8px 10px;
+      font-weight: 700;
+      border: 1px solid #334155;
+    }
+
+    td {
+      padding: 7px 10px;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+
+    .code-block, pre.code-block {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 10px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 6.6pt;
+      line-height: 1.28;
+      white-space: pre-wrap;
+      word-break: break-all;
+      overflow-x: hidden;
+      margin: 8px 0;
+      border: 1px solid #334155;
+      page-break-inside: avoid;
+    }
+
+    .code-inline {
+      font-family: 'JetBrains Mono', monospace;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 1.5px 5px;
+      border-radius: 4px;
+      font-size: 8pt;
+      border: 1px solid #e2e8f0;
+      font-weight: 600;
+    }
+
+    .badge-pill {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 12px;
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-blue { background: #e0f2fe; color: #0369a1; }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-purple { background: #f3e8ff; color: #7e22ce; }
+    .badge-amber { background: #fef3c7; color: #b45309; }
+
+    .step-card {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .step-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+
+    .step-card-title {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .step-badge {
+      background: #0284c7;
+      color: #fff;
+      font-size: 7.5pt;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 800;
+    }
+
+    .sign-table {
+      width: 100%;
+      margin-top: 30px;
+      border: none;
+    }
+
+    .sign-table td {
+      border: none;
+      background: transparent !important;
+      text-align: center;
+      padding: 15px;
+      width: 50%;
+    }
+
+    .sign-line {
+      border-top: 1px solid #475569;
+      width: 80%;
+      margin: 0 auto 6px auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CAPA OFICIAL -->
+  <div class="cover">
+    <div class="cover-header">
+      <div class="brand-badge">
+        FLOW<span>LEADS</span> CRM
+      </div>
+      <div class="doc-meta">
+        <strong>GRUPO MÁRIO NETO</strong><br>
+        Doc Ref: <code>DOC-FL-META-STEP-2026</code>
+      </div>
+    </div>
+
+    <div class="cover-body">
+      <div class="doc-category">Guia de Implantação e Operações</div>
+      <h1 class="cover-title">Manual Passo a Passo Oficial: Meta Ads & WhatsApp CTWA ➔ FlowLeads CRM</h1>
+      <p class="cover-subtitle">
+        Procedimento de engenharia comercial para configuração de campanhas no Meta Ads Manager, amarração de WhatsApp comercial por consultor de vendas, despacho via Cloudflare Workers e testes práticos de homologação.
+      </p>
+
+      <div class="meta-grid">
+        <div class="meta-item">
+          <strong>Organização / Mantenedor</strong>
+          <span>Grupo Mário Neto — Operação Ótica & CRM</span>
+        </div>
+        <div class="meta-item">
+          <strong>URL de Produção Homologada</strong>
+          <span>https://flowleads-crm-blush.vercel.app</span>
+        </div>
+        <div class="meta-item">
+          <strong>Endpoint de Ingestão de Webhook</strong>
+          <span>/api/webhooks/inbound</span>
+        </div>
+        <div class="meta-item">
+          <strong>Classificação de Governança</strong>
+          <span>Operacional Estratégico • Tráfego Pago & Vendas</span>
+        </div>
+        <div class="meta-item">
+          <strong>Data de Homologação</strong>
+          <span>Outubro / 2026 • Versão 2.5 (Vercel CDN)</span>
+        </div>
+        <div class="meta-item">
+          <strong>Algoritmo de Roteamento</strong>
+          <span>Inteligência por WhatsApp Comercial do Vendedor</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cover-footer">
+      <span>FlowLeads Core Engine • Infraestrutura de Alta Confiabilidade</span>
+      <span>Confidencial • Uso Interno Autorizado</span>
+    </div>
+  </div>
+
+  <!-- SEÇÃO 1: VISÃO GERAL E ARQUITETURA DE DADOS -->
+  <div class="section">
+    <h2><span class="num">1</span> Visão Geral da Arquitetura & Fluxo em Tempo Real</h2>
+    <p>
+      O presente manual estabelece as diretrizes normativas para que todas as oportunidades originadas no ecossistema da <strong>Meta Ads (Instagram e Facebook)</strong> sejam transferidas em menos de 1 segundo para o <strong>FlowLeads CRM</strong>, já organizadas na primeira fase do pipeline (<strong>NOVO LEAD</strong>) e atribuídas ao vendedor responsável pelo número de WhatsApp divulgado na campanha.
+    </p>
+
+    <div class="flow-diagram">
+      <div class="step-title">FLUXO OPERACIONAL DE CAPTAÇÃO E ROTEAMENTO:</div>
+      <br>
+      1. [CLIENTE NO INSTAGRAM / FACEBOOK] ➔ Clica no anúncio de Click-to-WhatsApp ou Formulário.<br>
+      2. [WHATSAPP COMERCIAL DO VENDEDOR] ➔ O anúncio abre a conversa no WhatsApp comercial daquele vendedor.<br>
+      3. [CLOUDFLARE WORKER] ➔ Captura o evento da Meta/WhatsApp e extrai os dados do lead.<br>
+      4. [FLOWLEADS INBOUND WEBHOOK] ➔ Recebe o POST em https://flowleads-crm-blush.vercel.app/api/webhooks/inbound.<br>
+      5. [MOTOR DE ROTEAMENTO] ➔ Compara 'destination_whatsapp' com o WhatsApp cadastrado dos consultores.<br>
+      6. [KANBAN DO FLOWLEADS] ➔ Card é criado instantaneamente em "NOVO LEAD" com a foto/nome do vendedor.
+    </div>
+
+    <div class="box-info">
+      <strong>Regra Mandatória de Atribuição:</strong> O roteamento no FlowLeads <strong>não é baseado em bandeiras genéricas</strong>. O fator determinante para qual consultor o lead será entregue é o <strong>contato de WhatsApp comercial cadastrado</strong>. O número amarrado ao anúncio é o mesmo que o CRM utiliza para atribuir o card ao consultor.
+    </div>
+  </div>
+
+  <!-- SEÇÃO 2: PREPARAÇÃO PRÉVIA NO FLOWLEADS -->
+  <div class="section">
+    <h2><span class="num">2</span> Pré-Requisito: Cadastro do WhatsApp do Vendedor no FlowLeads</h2>
+    <p>
+      Antes de iniciar qualquer configuração de campanha no Gerenciador da Meta, os dados comerciais da equipe de vendas devem estar devidamente preenchidos no CRM:
+    </p>
+
+    <div class="step-card">
+      <div class="step-card-header">
+        <span class="step-card-title">Passo 2.1 — Cadastrar os Consultores e seus Números Comerciais</span>
+        <span class="step-badge">OBRIGATÓRIO</span>
+      </div>
+      <ol>
+        <li>Faça login no FlowLeads com perfil de <strong>Supervisor</strong> (<span class="code-inline">supervisor@flowleads.com</span>).</li>
+        <li>Acesse o menu <strong>Central de Cadastros</strong> (<span class="code-inline">/cadastros</span>) na aba <strong>Vendedores</strong> ou em <strong>Gestão de Usuários</strong> (<span class="code-inline">/users</span>).</li>
+        <li>No cadastro de cada consultor (ex: <em>Fábio</em>, <em>Carlos</em>), preencha o campo <strong>WhatsApp Comercial</strong> com o DDD e o número completo (ex: <span class="code-inline">(19) 98725-2090</span>).</li>
+        <li>O motor de inteligência do FlowLeads aceita correspondências por:
+          <ul>
+            <li>Número exato com ou sem DDI (55);</li>
+            <li>Correspondência pelos últimos 8 ou 9 dígitos;</li>
+            <li>Correspondência por sufixo (ex: número terminado em <strong>45</strong> ou <strong>2090</strong>).</li>
+          </ul>
+        </li>
+      </ol>
+    </div>
+
+    <div class="box-tip">
+      <strong>Garantia de Segurança (Fallback):</strong> Caso um lead entre com um número de destino não cadastrado ou em branco, o sistema <strong>não descarta a oportunidade</strong>; o lead é automaticamente alocado para o <strong>Supervisor Geral</strong> para triagem imediata.
+    </div>
+  </div>
+
+  <!-- SEÇÃO 3: PASSO A PASSO NO META ADS MANAGER -->
+  <div class="section page-break">
+    <h2><span class="num">3</span> Passo a Passo no Gerenciador de Anúncios (Meta Ads)</h2>
+    <p>
+      Siga a estrutura hierárquica em três níveis dentro do <strong>Meta Ads Manager</strong> (<span class="code-inline">adsmanager.facebook.com</span>):
+    </p>
+
+    <div class="step-card">
+      <div class="step-card-header">
+        <span class="step-card-title">Nível 1: Campanha (Campaign)</span>
+        <span class="badge-pill badge-blue">ESTRUTURA</span>
+      </div>
+      <ol>
+        <li>No painel do Gerenciador de Anúncios, clique no botão verde <strong>+ Criar</strong>.</li>
+        <li>Selecione o objetivo da campanha:
+          <ul>
+            <li><strong>Engajamento</strong> (Recomendado para campanhas de Click-to-WhatsApp); ou</li>
+            <li><strong>Cadastros (Leads)</strong> (Para formulários instantâneos nativos da Meta).</li>
+          </ul>
+        </li>
+        <li>Defina a nomenclatura padronizada (ex: <span class="code-inline">CAMPANHA ÓTICA - MULTIFOCAL VARILUX</span>).</li>
+        <li><em>Dica:</em> O FlowLeads captura esse nome automaticamente e cria a etiqueta da campanha correspondente no corpo do card.</li>
+      </ol>
+    </div>
+
+    <div class="step-card">
+      <div class="step-card-header">
+        <span class="step-card-title">Nível 2: Grupo de Anúncios (Ad Set) — O Coração do Roteamento</span>
+        <span class="badge-pill badge-purple">ROTEAMENTO</span>
+      </div>
+      <ol>
+        <li>No campo <strong>Local de Conversão</strong>, selecione: <strong>Apps de mensagens</strong>.</li>
+        <li>Em <strong>Aplicativos de mensagens</strong>, selecione exclusivamente: <strong>WhatsApp</strong>.</li>
+        <li><strong>Vincular a Conta de WhatsApp do Vendedor:</strong>
+          <ul>
+            <li>Selecione a Página do Facebook do Grupo Mário Neto.</li>
+            <li>No menu suspenso do WhatsApp, selecione a <strong>Conta Comercial correspondente ao vendedor desta campanha</strong> (ex: o número do WhatsApp comercial com final 45 ou final 2090).</li>
+          </ul>
+        </li>
+        <li><strong>Estratégia Multivendedores:</strong> Se você deseja distribuir leads entre 3 vendedores distintos, crie <strong>3 Grupos de Anúncios</strong>, cada um apontando para a conta comercial do WhatsApp do respectivo vendedor.</li>
+        <li>Nomeie o grupo de anúncios de forma descritiva (ex: <span class="code-inline">GRUPO VARILUX - VENDEDOR FABIO - WHATSAPP 2090</span>).</li>
+        <li>Configure o orçamento, a localização geográfica da loja (ex: raio de 5 km a 10 km) e a idade do público-alvo (ex: 35-65 anos para multifocais).</li>
+      </ol>
+    </div>
+
+    <div class="step-card">
+      <div class="step-card-header">
+        <span class="step-card-title">Nível 3: Anúncio & Criativo (Ad) — Rastreabilidade da Mensagem</span>
+        <span class="badge-pill badge-green">CRIATIVO & COPY</span>
+      </div>
+      <ol>
+        <li>Insira o criativo (imagem estática ou vídeo em formato Reels/Stories 9:16 e Feed 1:1).</li>
+        <li>Escreva o texto publicitário focado no benefício ótico (lente multifocal, exame de vista ou armação).</li>
+        <li>Na seção <strong>Modelo de Mensagem / Iniciar Conversas</strong>, clique em <strong>Editar</strong>.</li>
+        <li>Configure a <strong>Mensagem de Saudação Pré-definida (Prefilled Text)</strong>:
+          <div class="code-block">
+Olá! Vi o anúncio no Instagram [CAMPANHA MULTIFOCAL VARILUX] e gostaria de saber mais sobre as condições e agendar minha visita à ótica.
+          </div>
+        </li>
+        <li>Esta mensagem é preenchida automaticamente no celular do cliente ao clicar no anúncio, permitindo ao vendedor e ao sistema identificar a origem imediata.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- SEÇÃO 4: CONFIGURAÇÃO DO WORKER E WEBHOOK -->
+  <div class="section page-break">
+    <h2><span class="num">4</span> Conexão do Cloudflare Worker & Endpoints de Webhook</h2>
+    <p>
+      O Cloudflare Worker atua como a ponte de alta velocidade entre a nuvem da Meta e a infraestrutura do FlowLeads CRM.
+    </p>
+
+    <h3>4.1 Endereços Oficiais do Webhook (FLOWLEADS_WEBHOOK_URL)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Parâmetro</th>
+          <th>Endereço Homologado em Produção</th>
+          <th>Método</th>
+          <th>Finalidade</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Endpoint Principal</strong></td>
+          <td><span class="code-inline">https://flowleads-crm-blush.vercel.app/api/webhooks/inbound</span></td>
+          <td><span class="badge-pill badge-blue">POST</span></td>
+          <td>Recomendado para Cloudflare Workers e Webhooks externos de leads.</td>
+        </tr>
+        <tr>
+          <td><strong>Endpoint Padrão v1</strong></td>
+          <td><span class="code-inline">https://flowleads-crm-blush.vercel.app/api/v1/webhook/inbound</span></td>
+          <td><span class="badge-pill badge-blue">POST</span></td>
+          <td>Compatível com integrações legado que exigem prefixo v1.</td>
+        </tr>
+        <tr>
+          <td><strong>Endpoint Nativo Meta</strong></td>
+          <td><span class="code-inline">https://flowleads-crm-blush.vercel.app/api/webhooks/meta</span></td>
+          <td><span class="badge-pill badge-blue">GET/POST</span></td>
+          <td>Para handshake de verificação direta da Meta (hub.challenge / HMAC).</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>4.2 Código Completo para o Cloudflare Worker (worker.js)</h3>
+    <p>
+      Cole o código abaixo no seu Cloudflare Worker e configure a variável de ambiente <span class="code-inline">FLOWLEADS_WEBHOOK_URL</span>:
+    </p>
+
+    <pre class="code-block">
+// Cloudflare Worker: Meta Ads & WhatsApp CTWA -> FlowLeads CRM
+export default {
+  async fetch(request, env, ctx) {
+    if (request.method === "GET") {
+      return new Response("FlowLeads Worker OK", { status: 200 });
+    }
+    if (request.method !== "POST") {
+      return new Response("Method not allowed", { status: 405 });
+    }
+
+    try {
+      const payload = await request.json();
+
+      // Estruturação padronizada para o motor do FlowLeads
+      const leadData = {
+        name: payload.name || payload.full_name || payload.contact_name || "Lead WhatsApp",
+        phone: payload.phone || payload.phone_number || payload.from || "",
+        destination_whatsapp: payload.destination_whatsapp || payload.to || "",
+        campaign_name: payload.campaign_name || payload.campaign || "Meta Ads CTWA",
+        adset_name: payload.adset_name || "",
+        ad_name: payload.ad_name || "",
+        dealValue: Number(payload.dealValue || payload.value || 0),
+        email: payload.email || "",
+        notes: payload.notes || payload.message || "Lead via Cloudflare Worker"
+      };
+
+      const webhookUrl = env.FLOWLEADS_WEBHOOK_URL 
+        || "https://flowleads-crm-blush.vercel.app/api/webhooks/inbound";
+
+      const res = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(leadData)
+      });
+
+      const data = await res.json();
+      return new Response(JSON.stringify(data), {
+        status: res.status,
+        headers: { "Content-Type": "application/json" }
+      });
+    } catch (err) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+  }
+};
+    </pre>
+  </div>
+
+  <!-- SEÇÃO 5: TESTES E HOMOLOGAÇÃO -->
+  <div class="section page-break">
+    <h2><span class="num">5</span> Procedimento de Teste Prático (Sem Gastar Orçamento)</h2>
+    <p>
+      Antes de iniciar os investimentos em anúncios, execute os testes abaixo para atestar a fluidez da esteira:
+    </p>
+
+    <h3>5.1 Teste pelo Simulador Integrado do FlowLeads (Imediato)</h3>
+    <ol>
+      <li>Acesse o painel web em: <span class="code-inline">https://flowleads-crm-blush.vercel.app/cadastros</span>.</li>
+      <li>Selecione a aba <strong>Integrações & Webhook</strong>.</li>
+      <li>No formulário <strong>Simulador de Lead (Teste ao Vivo)</strong>:
+        <ul>
+          <li>Defina o Nome: <em>Lead Teste Fábio Meta Ads</em></li>
+          <li>Telefone do Lead: <em>(11) 98888-7777</em></li>
+          <li>No campo <strong>WhatsApp de Destino (Vendedor)</strong>, selecione o consultor desejado.</li>
+          <li>Clique em <strong>🚀 Disparar Lead de Teste para o Webhook</strong>.</li>
+        </ul>
+      </li>
+      <li>Abra o <strong>Kanban de Leads</strong> (<span class="code-inline">/</span>): o card estará criado na primeira coluna <strong>NOVO LEAD</strong>, com a foto do vendedor selecionado e o checklist padrão devidamente anexado.</li>
+    </ol>
+
+    <h3>5.2 Teste com a Lead Ads Testing Tool Oficial da Meta</h3>
+    <ol>
+      <li>Acesse: <span class="code-inline">https://developers.facebook.com/tools/lead-ads-testing</span>.</li>
+      <li>Selecione a sua <strong>Página do Facebook</strong> e o <strong>Formulário Instantâneo</strong>.</li>
+      <li>Clique no botão <strong>Preview Form</strong> e preencha com dados de teste.</li>
+      <li>Clique em <strong>Criar Cadastro (Create Lead)</strong>. O evento será disparado para o Webhook em menos de 1 segundo.</li>
+    </ol>
+  </div>
+
+  <!-- SEÇÃO 6: REGRAS DE GOVERNANÇA COMERCIAL -->
+  <div class="section">
+    <h2><span class="num">6</span> Regras de Governança Comercial no Kanban</h2>
+    <p>
+      Para assegurar a disciplina da equipe e a confiabilidade dos indicadores do Grupo Mário Neto:
+    </p>
+
+    <div class="box-warning">
+      <strong>1. Três Fases Imutáveis:</strong> As colunas <strong>NOVO LEAD</strong>, <strong>FECHADO</strong> e <strong>PERDIDO</strong> são blindadas contra exclusão ou alteração de nome. Fases intermediárias podem ser adicionadas e personalizadas livremente.
+    </div>
+
+    <div class="box-warning">
+      <strong>2. Trava de Agendamento Obrigatório:</strong> Nenhum consultor consegue arrastar o card de <strong>NOVO LEAD</strong> para colunas posteriores sem antes preencher a <strong>Loja Negociada de Destino</strong> e a <strong>Data/Hora Estimada da Visita</strong>.
+    </div>
+
+    <div class="box-warning">
+      <strong>3. Trava de Fechamento Financeiro:</strong> O Número da Ordem de Serviço (OS), Valor Final Fechado e Data da Venda permanecem bloqueados e só são abertos quando o lead atinge o status <strong>FECHADO</strong>.
+    </div>
+  </div>
+
+  <!-- ASSINATURAS E APROVAÇÃO -->
+  <div class="section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+    <h3 style="text-align: center; margin-bottom: 24px; font-size: 9.5pt; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">
+      Termo de Homologação Técnica & Operacional
+    </h3>
+    <table class="sign-table">
+      <tr>
+        <td>
+          <div class="sign-line"></div>
+          <strong style="font-size: 9pt; color: #0f172a; display: block;">Supervisão Comercial Geral</strong>
+          <span style="font-size: 8pt; color: #64748b;">Grupo Mário Neto</span>
+        </td>
+        <td>
+          <div class="sign-line"></div>
+          <strong style="font-size: 9pt; color: #0f172a; display: block;">Engenharia de Software & Arquitetura CRM</strong>
+          <span style="font-size: 8pt; color: #64748b;">FlowLeads Core Engine</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+</body>
+</html>

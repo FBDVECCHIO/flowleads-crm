@@ -60,13 +60,22 @@ export default function ProtocoloMetaPage() {
               <span>Imprimir / Salvar em PDF</span>
             </button>
             <a
+              href="/Manual-Passo-a-Passo-Meta-Ads-FlowLeads.pdf"
+              target="_blank"
+              download="Manual-Passo-a-Passo-Meta-Ads-FlowLeads.pdf"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
+            >
+              <Download className="w-4 h-4" />
+              <span>Baixar Manual Passo a Passo (PDF)</span>
+            </a>
+            <a
               href="/Protocolo-Integracao-Meta-FlowLeads.pdf"
               target="_blank"
               download="Protocolo-Integracao-Meta-FlowLeads.pdf"
               className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
             >
               <Download className="w-4 h-4" />
-              <span>Baixar PDF Oficial</span>
+              <span>Baixar Protocolo Técnico (PDF)</span>
             </a>
           </div>
         </div>
