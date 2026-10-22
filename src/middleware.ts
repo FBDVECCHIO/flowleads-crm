@@ -28,7 +28,8 @@ function isPublicPath(pathname: string): boolean {
     pathname.endsWith(".css") ||
     pathname.endsWith(".js") ||
     pathname.endsWith(".woff") ||
-    pathname.endsWith(".woff2")
+    pathname.endsWith(".woff2") ||
+    pathname.endsWith(".pdf")
   ) {
     return true;
   }
