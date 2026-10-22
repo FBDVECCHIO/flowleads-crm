@@ -84,6 +84,8 @@ export async function POST(req: Request) {
       payload.lead_name ||
       payload.customer_name ||
       payload.client_name ||
+      payload.lead?.name ||
+      payload.lead?.full_name ||
       "Lead Sem Nome";
 
     const phone =
@@ -93,6 +95,8 @@ export async function POST(req: Request) {
       payload.tel ||
       payload.celular ||
       payload.telefone ||
+      payload.lead?.phone ||
+      payload.lead?.phone_number ||
       "";
 
     const destination_whatsapp =
@@ -102,15 +106,19 @@ export async function POST(req: Request) {
       payload.target_phone ||
       payload.store_phone ||
       payload.to ||
+      payload.lead?.destination_whatsapp ||
+      payload.metadata?.display_phone_number ||
       undefined;
 
-    const email = payload.email || payload.mail || undefined;
+    const email = payload.email || payload.mail || payload.lead?.email || undefined;
 
     const campaign_name =
       payload.campaign_name ||
       payload.campaign ||
       payload.campanha ||
       payload.campaign_id ||
+      payload.marketing?.campaign_name ||
+      payload.marketing?.headline ||
       undefined;
 
     const adset_name =
@@ -118,6 +126,7 @@ export async function POST(req: Request) {
       payload.adset ||
       payload.grupo ||
       payload.adset_id ||
+      payload.marketing?.adset_name ||
       undefined;
 
     const ad_name =
@@ -126,6 +135,8 @@ export async function POST(req: Request) {
       payload.anuncio ||
       payload.criativo ||
       payload.ad_id ||
+      payload.marketing?.ad_name ||
+      payload.marketing?.headline ||
       undefined;
 
     const dealValue =
