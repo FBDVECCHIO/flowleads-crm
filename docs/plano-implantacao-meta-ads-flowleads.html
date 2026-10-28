@@ -1,0 +1,603 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Plano de Implantação Meta Ads & WhatsApp CTWA — FlowLeads CRM</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+    @page {
+      size: A4;
+      margin: 12mm 14mm 14mm 14mm;
+      @bottom-right {
+        content: "Página " counter(page) " de " counter(pages);
+        font-family: 'Inter', sans-serif;
+        font-size: 8pt;
+        color: #94a3b8;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #0f172a;
+      background-color: #ffffff;
+      line-height: 1.5;
+      font-size: 9pt;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .cover {
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 94vh;
+      padding: 30px 20px 20px 20px;
+    }
+
+    .cover-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #0284c7;
+      padding-bottom: 18px;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 11pt;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-sub {
+      color: #0284c7;
+      font-weight: 600;
+      font-size: 9pt;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .cover-hero {
+      margin: auto 0;
+      padding: 40px 0;
+    }
+
+    .doc-category {
+      display: inline-block;
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 16px;
+    }
+
+    .cover-title {
+      font-size: 26pt;
+      font-weight: 800;
+      line-height: 1.15;
+      color: #0f172a;
+      margin-bottom: 16px;
+    }
+
+    .cover-title span { color: #0284c7; }
+
+    .cover-subtitle {
+      font-size: 12pt;
+      color: #475569;
+      max-width: 620px;
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+
+    .cover-metadata-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 30px;
+      padding: 18px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+    }
+
+    .meta-box h4 {
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.8px;
+      margin-bottom: 4px;
+    }
+
+    .meta-box p {
+      font-size: 9.5pt;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .cover-footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 8.5pt;
+      color: #64748b;
+    }
+
+    .page-break { page-break-after: always; }
+
+    h2 {
+      font-size: 15pt;
+      font-weight: 800;
+      color: #0f172a;
+      border-left: 4px solid #0284c7;
+      padding-left: 10px;
+      margin: 22px 0 12px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    h3 {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 14px 0 8px 0;
+    }
+
+    p { margin-bottom: 10px; color: #334155; }
+
+    .alert {
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin: 12px 0;
+      font-size: 8.5pt;
+      border-left: 4px solid;
+    }
+
+    .alert-info { background: #f0f9ff; border-color: #0284c7; color: #0369a1; }
+    .alert-warning { background: #fffbeb; border-color: #f59e0b; color: #b45309; }
+    .alert-success { background: #f0fdf4; border-color: #10b981; color: #15803d; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 8pt;
+    }
+
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 7px 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #f1f5f9;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    tr:nth-child(even) { background-color: #f8fafc; }
+
+    .code-box {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7.5pt;
+      line-height: 1.45;
+      overflow-x: auto;
+      margin: 10px 0;
+      border: 1px solid #1e293b;
+    }
+
+    .step-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .step-number {
+      background: #0284c7;
+      color: #ffffff;
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 8pt;
+    }
+
+    .badge-done {
+      background: #dcfce7;
+      color: #15803d;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 7.5pt;
+    }
+
+    .badge-pending {
+      background: #fef3c7;
+      color: #b45309;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 7.5pt;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CAPA -->
+  <div class="cover">
+    <div class="cover-header">
+      <div class="brand-badge">FLOWLEADS CRM</div>
+      <div class="brand-sub">Grupo Mário Neto · Engenharia & Tráfego</div>
+    </div>
+
+    <div class="cover-hero">
+      <span class="doc-category">Plano Executivo de Implantação</span>
+      <h1 class="cover-title">Meta Ads, Instagram &amp; <span>WhatsApp CTWA</span></h1>
+      <p class="cover-subtitle">
+        Arquitetura técnica, diagnóstico de status, configuração da Meta Graph API, roteamento segmentado por vendedor e código oficial do Cloudflare Worker.
+      </p>
+
+      <div class="cover-metadata-grid">
+        <div class="meta-box">
+          <h4>Versão</h4>
+          <p>3.0 (Cloudflare Edge Active)</p>
+        </div>
+        <div class="meta-box">
+          <h4>Status dos Sistemas</h4>
+          <p>Worker &amp; FlowLeads Operacionais</p>
+        </div>
+        <div class="meta-box">
+          <h4>Ambiente</h4>
+          <p>Produção (Vercel + Cloudflare)</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="cover-footer">
+      <div>Autoria: <strong>Protocolo A.T.L.A.S.</strong> · Auditoria de Sistemas</div>
+      <div>Data: <strong>Outubro de 2026</strong></div>
+    </div>
+  </div>
+
+  <!-- SEÇÃO 1: DIAGNÓSTICO ATUAL -->
+  <h2>1. Matriz de Maturidade: Onde Estamos e O que Falta</h2>
+  <p>A tabela abaixo detalha o status operacional exato de cada camada necessária para que os leads cheguem do anúncio ao FlowLeads:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 28%;">Componente</th>
+        <th style="width: 14%;">Status</th>
+        <th>Detalhes Técnicos &amp; Próxima Ação</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>FlowLeads CRM (API Inbound)</strong></td>
+        <td><span class="badge-done">CONCLUÍDO</span></td>
+        <td>Endpoint <code>/api/webhooks/inbound</code> ativo em produção no Vercel. Roteia automaticamente por número de telefone de destino (<code>destination_whatsapp</code>) para o vendedor cadastrado no banco Supabase.</td>
+      </tr>
+      <tr>
+        <td><strong>Cloudflare Worker Bridge</strong></td>
+        <td><span class="badge-done">CONCLUÍDO</span></td>
+        <td>Worker <code>flowleads-crm</code> compilado e ativo em <code>https://flowleads-crm.fbdv1202.workers.dev</code>. Handshake GET verificado com status 200 e parsing de webhook validado em telemetria ao vivo.</td>
+      </tr>
+      <tr>
+        <td><strong>Meta App no Meta for Developers</strong></td>
+        <td><span class="badge-pending">PENDENTE</span></td>
+        <td>Necessário criar o Aplicativo empresarial no portal de desenvolvedores da Meta, adicionar o produto <strong>WhatsApp</strong> e salvar a URL de webhook do Cloudflare com o Verify Token.</td>
+      </tr>
+      <tr>
+        <td><strong>Token de Sistema da Meta (Graph API)</strong></td>
+        <td><span class="badge-pending">PENDENTE</span></td>
+        <td>Gerar o <strong>System User Access Token</strong> no Meta Business Manager com permissões <code>ads_read</code> e <code>whatsapp_business_messaging</code> para enriquecimento de nome de campanha.</td>
+      </tr>
+      <tr>
+        <td><strong>Segmentação no Meta Ads Manager</strong></td>
+        <td><span class="badge-pending">PENDENTE</span></td>
+        <td>No Gerenciador de Anúncios, criar os Conjuntos de Anúncios direcionando cada conjunto para o número de WhatsApp exato da filial/vendedor correspondente.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="alert alert-info">
+    <strong>Resumo Executivo:</strong> A engenharia de software (backend FlowLeads e Cloudflare Worker) está 100% pronta, auditada e testada. O que falta é exclusivamente a etapa de <strong>conectar a ponta da Meta</strong> (App do desenvolvedor e seleção do WhatsApp nos conjuntos de anúncio).
+  </div>
+
+  <!-- SEÇÃO 2: ARQUITETURA DE SEGMENTAÇÃO -->
+  <h2>2. A Arquitetura do Lead e Segmentação por Vendedor</h2>
+  <p>O fluxo de dados desde o clique no Instagram até a tela do FlowLeads opera da seguinte maneira:</p>
+
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-number">1</div>
+      <strong>O Clique no Anúncio (Instagram / Meta Ads)</strong>
+    </div>
+    <p>O cliente assiste a um anúncio ou post impulsionado no Instagram e clica em <em>"Enviar Mensagem"</em>. O Meta Ads abre o WhatsApp conectando o cliente ao número vinculado àquele anúncio específico, com o token criptográfico de anúncio (CTWA).</p>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-number">2</div>
+      <strong>O Disparo do Webhook Oficial da Meta</strong>
+    </div>
+    <p>Quando o cliente envia a mensagem inicial no WhatsApp, a Meta dispara um webhook HTTP POST contendo:</p>
+    <ul style="margin-left: 20px; font-size: 8pt; color: #475569;">
+      <li><code>metadata.display_phone_number</code>: O número de WhatsApp da sua empresa que <strong>recebeu</strong> a mensagem (ex: 19987252090).</li>
+      <li><code>messages[0].from</code>: O número pessoal do cliente.</li>
+      <li><code>contacts[0].profile.name</code>: O nome de perfil do cliente no WhatsApp.</li>
+      <li><code>messages[0].referral</code>: Objeto com o ID do Anúncio (<code>source_id</code>), Título do Anúncio (<code>headline</code>) e o Click ID (<code>ctwa_clid</code>).</li>
+    </ul>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-number">3</div>
+      <strong>O Cloudflare Worker Traduz e Encaminha</strong>
+    </div>
+    <p>O Cloudflare Worker intercepta o webhook em microssegundos no Edge, mapeia o <code>display_phone_number</code> como <code>destination_whatsapp</code>, extrai a campanha e dispara um POST seguro para o FlowLeads.</p>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-number">4</div>
+      <strong>O FlowLeads Roteia e Cria o Card</strong>
+    </div>
+    <p>O FlowLeads recebe a requisição, pesquisa no banco de dados qual vendedor possui o telefone correspondente em <code>destination_whatsapp</code>, cria o card no Kanban na fase inicial com o nome e telefone mascarado do cliente e atribui a meta individual e o card diretamente para aquele vendedor.</p>
+  </div>
+
+  <div class="alert alert-warning">
+    <strong>Atenção Crucial ao Turbinar pelo Instagram:</strong> Ao usar o botão "Turbinar" diretamente pelo app do celular do Instagram, a Meta força o direcionamento apenas para o WhatsApp principal do perfil. Para conseguir <strong>segmentar vendedores diferentes por campanha</strong>, é fundamental criar ou configurar os anúncios pelo <strong>Meta Ads Manager (Gerenciador de Anúncios no computador)</strong>, selecionando o post existente e escolhendo o número de destino em cada Conjunto de Anúncios.
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- SEÇÃO 3: PASSO A PASSO META FOR DEVELOPERS -->
+  <h2>3. Passo a Passo: Construção do App no Meta for Developers</h2>
+
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-number">1</div>
+      <strong>Criar o Aplicativo Empresarial</strong>
+    </div>
+    <p>Acesse <code>developers.facebook.com</code> com a conta administradora do Facebook da empresa:</p>
+    <ul style="margin-left: 20px; font-size: 8pt; color: #475569;">
+      <li>Clique em <strong>Meus Aplicativos</strong> > <strong>Criar Aplicativo</strong>.</li>
+      <li>Selecione o tipo de aplicativo: <strong>Empresa (Business)</strong> ou <strong>Outro</strong>.</li>
+      <li>Defina o Nome de Exibição: <code>FlowLeads Webhook Bridge</code>.</li>
+      <li>Selecione a sua <strong>Conta Empresarial do Meta Business Manager</strong> (Grupo Mário Neto) e clique em Criar.</li>
+    </ul>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-number">2</div>
+      <strong>Adicionar o Produto WhatsApp</strong>
+    </div>
+    <p>No painel inicial do aplicativo recém-criado:</p>
+    <ul style="margin-left: 20px; font-size: 8pt; color: #475569;">
+      <li>Role a página até o card <strong>WhatsApp</strong> e clique em <strong>Configurar</strong>.</li>
+      <li>Vincule a sua Conta do WhatsApp Business (WABA) à qual pertencem os números de WhatsApp dos seus vendedores.</li>
+    </ul>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-number">3</div>
+      <strong>Configurar o Webhook no WhatsApp</strong>
+    </div>
+    <p>No menu lateral esquerdo, clique em <strong>WhatsApp</strong> > <strong>Configuração</strong>:</p>
+    <ul style="margin-left: 20px; font-size: 8pt; color: #475569;">
+      <li>Localize o painel <strong>Webhooks</strong> e clique em <strong>Editar</strong>.</li>
+      <li><strong>URL de Retorno (Callback URL):</strong> <code>https://flowleads-crm.fbdv1202.workers.dev</code></li>
+      <li><strong>Token de Verificação (Verify Token):</strong> <code>atlas_flowleads_2026</code></li>
+      <li>Clique em <strong>Verificar e Salvar</strong>. A Meta fará um teste GET e o Worker responderá instantaneamente com sucesso.</li>
+      <li>Na lista de campos de Webhook, localize <strong>messages</strong> e clique em <strong>Assinar (Subscribe)</strong>.</li>
+    </ul>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-number">4</div>
+      <strong>Gerar o Token Permanente de Sistema (System User)</strong>
+    </div>
+    <p>Para enriquecer os leads com o nome exato da campanha via Graph API:</p>
+    <ul style="margin-left: 20px; font-size: 8pt; color: #475569;">
+      <li>Acesse o <strong>Meta Business Suite</strong> > <strong>Configurações do Negócio</strong> > <strong>Usuários do Sistema</strong>.</li>
+      <li>Adicione um usuário chamado <code>FlowLeads System User</code> com função de Administrador.</li>
+      <li>Atribua o seu App e a conta do WhatsApp a esse usuário com controle total.</li>
+      <li>Clique em <strong>Gerar Token</strong> e selecione as permissões:
+        <code style="background: #e2e8f0; padding: 2px 4px; border-radius: 4px;">whatsapp_business_messaging</code>, 
+        <code style="background: #e2e8f0; padding: 2px 4px; border-radius: 4px;">whatsapp_business_management</code> e 
+        <code style="background: #e2e8f0; padding: 2px 4px; border-radius: 4px;">ads_read</code>.
+      </li>
+      <li>Copie o token gerado. Ele nunca expira.</li>
+    </ul>
+  </div>
+
+  <!-- SEÇÃO 4: GRAPH API -->
+  <h2>4. As Requisições na Meta Graph API</h2>
+  <p>Duas requisições principais ocorrem no ecossistema:</p>
+
+  <h3>A. O Webhook Inbound (Recebimento Automático)</h3>
+  <p>Disparado pela Meta para o Cloudflare Worker a cada nova conversa de anúncio:</p>
+  <div class="code-box">
+POST https://flowleads-crm.fbdv1202.workers.dev
+Content-Type: application/json
+
+{
+  "object": "whatsapp_business_account",
+  "entry": [{
+    "changes": [{
+      "field": "messages",
+      "value": {
+        "metadata": { "display_phone_number": "19987252090" },
+        "contacts": [{ "profile": { "name": "Nome do Lead" } }],
+        "messages": [{
+          "from": "5519999998888",
+          "text": { "body": "Olá, vi o anúncio no Instagram!" },
+          "referral": {
+            "source_type": "ad",
+            "source_id": "120205839201920",
+            "headline": "Promoção Óculos Multifocais",
+            "ctwa_clid": "ARBDb_zN9k3X4..."
+          }
+        }]
+      }
+    }]
+  }]
+}
+  </div>
+
+  <h3>B. O Enriquecimento de Campanha (Cloudflare -> Graph API)</h3>
+  <p>O Worker consulta os dados da campanha no Meta Ads Manager usando o <code>source_id</code> do anúncio:</p>
+  <div class="code-box">
+GET https://graph.facebook.com/v21.0/{source_id}?fields=id,name,adset{id,name,campaign{id,name}}&access_token={META_ACCESS_TOKEN}
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- SEÇÃO 5: CÓDIGO DO WORKER -->
+  <h2>5. Código Oficial do Cloudflare Worker (Copy &amp; Paste Ready)</h2>
+  <p>Este é o código exato em execução no seu Cloudflare Worker em <code>https://flowleads-crm.fbdv1202.workers.dev</code>:</p>
+
+  <div class="code-box">
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+
+    // 1. Handshake de Validação do Webhook (GET da Meta)
+    if (request.method === "GET") {
+      const mode = url.searchParams.get("hub.mode");
+      const token = url.searchParams.get("hub.verify_token");
+      const challenge = url.searchParams.get("hub.challenge");
+      const expectedToken = env.META_VERIFY_TOKEN || "atlas_flowleads_2026";
+
+      if (mode === "subscribe" && token === expectedToken) {
+        return new Response(challenge, { status: 200, headers: { "Content-Type": "text/plain" } });
+      }
+      return new Response("Forbidden: Invalid Verify Token", { status: 403 });
+    }
+
+    // 2. Recepção de Mensagens de Leads (POST da Meta)
+    if (request.method === "POST") {
+      try {
+        const body = await request.json();
+        ctx.waitUntil(processWebhook(body, env));
+        return new Response("EVENT_RECEIVED", { status: 200 });
+      } catch (err) {
+        return new Response("Bad Request", { status: 400 });
+      }
+    }
+
+    return new Response("Method Not Allowed", { status: 405 });
+  }
+};
+
+async function processWebhook(body, env) {
+  if (body.object !== "whatsapp_business_account") return;
+
+  for (const entry of (body.entry || [])) {
+    for (const change of (entry.changes || [])) {
+      if (change.field !== "messages" || !change.value) continue;
+
+      const value = change.value;
+      const displayPhoneNumber = value.metadata?.display_phone_number || "";
+      const contacts = value.contacts || [];
+      const messages = value.messages || [];
+
+      for (const msg of messages) {
+        if (msg.type !== "text" && !msg.referral && !msg.text) continue;
+
+        const referral = msg.referral;
+        const senderPhone = msg.from || "";
+        const contact = contacts.find(c => c.wa_id === senderPhone) || contacts[0];
+        const contactName = contact?.profile?.name || "Lead WhatsApp";
+        const messageText = msg.text?.body || "";
+
+        let marketingData = {
+          is_ad_lead: referral?.source_type === "ad",
+          ad_id: referral?.source_id || null,
+          campaign_name: referral?.headline || "Campanha Meta Ads (WhatsApp)",
+          headline: referral?.headline || null,
+          ctwa_clid: referral?.ctwa_clid || null
+        };
+
+        // Enriquecimento opcional via Graph API caso haja Token
+        if (marketingData.is_ad_lead && env.META_ACCESS_TOKEN && env.META_ACCESS_TOKEN.length > 20) {
+          try {
+            const res = await fetch(`https://graph.facebook.com/v21.0/${marketingData.ad_id}?fields=id,name,adset{name,campaign{name}}&access_token=${env.META_ACCESS_TOKEN}`);
+            if (res.ok) {
+              const meta = await res.json();
+              marketingData.campaign_name = meta.adset?.campaign?.name || marketingData.campaign_name;
+            }
+          } catch (e) { console.warn("Falha Graph API:", e); }
+        }
+
+        // Despacho unificado para o FlowLeads CRM
+        const flowleadsUrl = env.FLOWLEADS_WEBHOOK_URL || "https://flowleads-crm-blush.vercel.app/api/webhooks/inbound";
+        await fetch(flowleadsUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "User-Agent": "FlowLeads-Worker/2.0" },
+          body: JSON.stringify({
+            name: contactName,
+            phone: senderPhone,
+            destination_whatsapp: displayPhoneNumber,
+            campaign_name: marketingData.campaign_name,
+            platform: "META ADS / WHATSAPP CTWA",
+            notes: `[Mensagem WhatsApp]: "${messageText}"\nAd ID: ${marketingData.ad_id || "N/A"}`
+          })
+        });
+      }
+    }
+  }
+}
+  </div>
+
+  <!-- SEÇÃO 6: CHECKLIST DE TESTES -->
+  <h2>6. Checklist Final de Validação</h2>
+  <div class="step-card">
+    <p>Para garantir que o fluxo está perfeito antes de ligar a verba de anúncios:</p>
+    <ul style="margin-left: 20px; font-size: 8.5pt; color: #334155; line-height: 1.8;">
+      <li>[x] <strong>Vendedores cadastrados no FlowLeads:</strong> Certifique-se de que cada vendedor em <em>Cadastros &gt; Usuários / Vendedores</em> possui seu número de WhatsApp preenchido com DDD (ex: <code>19987252090</code>).</li>
+      <li>[x] <strong>Webhook do Cloudflare verificado:</strong> Confirmado com status 200 e resposta <code>EVENT_RECEIVED</code>.</li>
+      <li>[ ] <strong>Webhook assinado no Meta for Developers:</strong> Campo <code>messages</code> inscrito.</li>
+      <li>[ ] <strong>Teste Real com Anúncio em Rascunho:</strong> Clique no botão "Enviar Mensagem" da prévia do anúncio no Instagram e mande uma mensagem de teste. O cartão deve aparecer em segundos na coluna inicial do FlowLeads.</li>
+    </ul>
+  </div>
+
+</body>
+</html>
