@@ -654,7 +654,7 @@ export default function PipePage({ params }: { params: Promise<{ id: string }> }
       userRole={currentUser?.role || "ADMIN"}
       allowedMenus={currentUser?.allowedMenus}
     >
-      <div className="flex flex-col h-[calc(100vh-6.5rem)]">
+      <div className="flex flex-col min-h-[calc(100vh-6.5rem)] pb-8">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
           <div>
             <div className="flex items-center gap-2">

@@ -48,6 +48,7 @@ export function CardContextMenu({
   onRenameCard,
 }: CardContextMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState<"color" | "move" | "tag" | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renamedTitle, setRenamedTitle] = useState(card.title || "");
@@ -75,6 +76,11 @@ export function CardContextMenu({
 
   const toggleMenu = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isOpen && menuRef.current) {
+      const rect = menuRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setOpenUpward(spaceBelow < 320);
+    }
     setIsOpen((prev) => !prev);
     setActiveSubmenu(null);
     setIsRenaming(false);
@@ -90,7 +96,7 @@ export function CardContextMenu({
   };
 
   return (
-    <div className="relative inline-block text-left" ref={menuRef}>
+    <div className={`relative inline-block text-left ${isOpen ? "z-50" : ""}`} ref={menuRef}>
       {/* 3-dots trigger button */}
       <button
         type="button"
@@ -104,7 +110,9 @@ export function CardContextMenu({
       {isOpen && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-xl border border-slate-200 z-50 py-1 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-100"
+          className={`absolute right-0 ${
+            openUpward ? "bottom-full mb-1" : "top-full mt-1"
+          } w-56 bg-white rounded-lg shadow-2xl border border-slate-200 z-[100] py-1 text-xs text-slate-700 animate-in fade-in duration-100`}
         >
           {/* Action 0: Abrir e Editar Lead Completo */}
           {onOpenCard && (

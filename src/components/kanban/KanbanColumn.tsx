@@ -132,7 +132,7 @@ export function KanbanColumn({
     <div
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className="w-72 shrink-0 bg-slate-100/90 rounded-xl flex flex-col max-h-[calc(100vh-10rem)] border border-slate-200/80 shadow-sm transition-all"
+      className="w-72 shrink-0 bg-slate-100/95 rounded-xl flex flex-col min-h-[calc(100vh-11rem)] border border-slate-200/80 shadow-sm transition-all"
     >
       {/* Cabeçalho da Coluna com Governança e Ações de Movimentação */}
       <div
@@ -269,7 +269,7 @@ export function KanbanColumn({
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
         onDrop={handleDrop}
-        className="flex-1 overflow-y-auto p-2.5 space-y-2 min-h-[150px] bg-slate-200/85 border-t border-slate-300/60 rounded-b-xl transition-colors"
+        className="flex-1 p-2.5 space-y-2.5 min-h-[220px] bg-slate-200/85 border-t border-slate-300/60 rounded-b-xl transition-colors"
       >
         {phaseCards.length > 0 ? (
           phaseCards.map((card) => (

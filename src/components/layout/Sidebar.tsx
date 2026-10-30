@@ -259,7 +259,7 @@ export function Sidebar({
           isResizing ? "" : "transition-all duration-300 ease-in-out"
         } border-r border-slate-800 ${
           isCollapsed ? "w-16" : "w-64"
-        } min-h-screen relative z-20`}
+        } h-screen sticky top-0 z-30`}
       >
         {/* Divisor arrastável (resizable drag handle) */}
         {!isCollapsed && (
@@ -407,8 +407,8 @@ export function Sidebar({
           })}
         </div>
 
-        {/* Rodapé da Sidebar: Perfil do Usuário, Botão Sair & Status do Sistema */}
-        <div className="p-3 border-t border-slate-800 bg-slate-900/90 space-y-2">
+        {/* Rodapé da Sidebar: Perfil do Usuário, Botão Sair & Status do Sistema (sempre fixo e visível) */}
+        <div className="p-3 border-t border-slate-800 bg-slate-900 shrink-0 mt-auto space-y-2 z-10">
           {/* Perfil do Usuário com Botão de Logout integrado */}
           {!isCollapsed ? (
             <div className="flex items-center justify-between p-2 rounded-lg bg-slate-800/60 border border-slate-700/40">

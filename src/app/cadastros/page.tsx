@@ -32,7 +32,9 @@ import {
   Send,
   Zap,
   Code,
-  Download
+  Download,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 
 interface StoreItem {
@@ -168,6 +170,14 @@ export default function CadastrosPage() {
   const [activeTab, setActiveTab] = useState<"lojas" | "vendedores" | "campanhas" | "tags" | "mensagens" | "checklist" | "integracoes">("lojas");
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [storePage, setStorePage] = useState(1);
+  const [sellerPage, setSellerPage] = useState(1);
+  const PAGE_SIZE = 25;
+
+  useEffect(() => {
+    setStorePage(1);
+    setSellerPage(1);
+  }, [searchTerm, activeTab]);
 
   // Coleções de dados
   const [stores, setStores] = useState<StoreItem[]>([]);
@@ -956,9 +966,30 @@ export default function CadastrosPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {stores
-                    .filter((s) => s.name.toLowerCase().includes(searchTerm.toLowerCase()) || (s.description && s.description.toLowerCase().includes(searchTerm.toLowerCase())))
-                    .map((s) => (
+                  {(() => {
+                    const filteredStores = stores.filter(
+                      (s) =>
+                        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        (s.description && s.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                    );
+                    const totalStorePages = Math.max(1, Math.ceil(filteredStores.length / PAGE_SIZE));
+                    const currentStorePage = Math.min(storePage, totalStorePages);
+                    const paginatedStores = filteredStores.slice(
+                      (currentStorePage - 1) * PAGE_SIZE,
+                      currentStorePage * PAGE_SIZE
+                    );
+
+                    if (paginatedStores.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-slate-400">
+                            {searchTerm ? "Nenhuma loja encontrada para o filtro informado." : "Nenhuma loja física cadastrada no momento."}
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return paginatedStores.map((s) => (
                       <React.Fragment key={s.id}>
                         <tr className="hover:bg-slate-50/80 transition-colors">
                           <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-2">
@@ -1027,17 +1058,60 @@ export default function CadastrosPage() {
                           </tr>
                         )}
                       </React.Fragment>
-                    ))}
-                  {stores.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-400">
-                        Nenhuma loja física cadastrada no momento.
-                      </td>
-                    </tr>
-                  )}
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>
+
+            {/* Barra de Paginação de Lojas (Limite de 25 linhas) */}
+            {(() => {
+              const filteredStores = stores.filter(
+                (s) =>
+                  s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (s.description && s.description.toLowerCase().includes(searchTerm.toLowerCase()))
+              );
+              const totalStorePages = Math.max(1, Math.ceil(filteredStores.length / PAGE_SIZE));
+              const currentStorePage = Math.min(storePage, totalStorePages);
+              const startCount = filteredStores.length === 0 ? 0 : (currentStorePage - 1) * PAGE_SIZE + 1;
+              const endCount = Math.min(currentStorePage * PAGE_SIZE, filteredStores.length);
+
+              return (
+                <div className="px-5 py-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50 text-xs text-slate-600">
+                  <div className="font-medium">
+                    Mostrando <span className="font-bold text-slate-900">{startCount}</span> a <span className="font-bold text-slate-900">{endCount}</span> de <span className="font-bold text-slate-900">{filteredStores.length}</span> lojas (25 por página)
+                  </div>
+
+                  {totalStorePages > 1 && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={currentStorePage <= 1}
+                        onClick={() => setStorePage((p) => Math.max(1, p - 1))}
+                        className="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white text-slate-700 font-semibold flex items-center gap-1 transition-colors shadow-sm"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                        <span>Anterior</span>
+                      </button>
+
+                      <span className="px-3 py-1 font-bold text-slate-700 bg-white border border-slate-200 rounded-lg shadow-sm">
+                        {currentStorePage} / {totalStorePages}
+                      </span>
+
+                      <button
+                        type="button"
+                        disabled={currentStorePage >= totalStorePages}
+                        onClick={() => setStorePage((p) => Math.min(totalStorePages, p + 1))}
+                        className="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white text-slate-700 font-semibold flex items-center gap-1 transition-colors shadow-sm"
+                      >
+                        <span>Próximo</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
 
@@ -1084,9 +1158,30 @@ export default function CadastrosPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {sellers
-                    .filter((sl) => sl.name.toLowerCase().includes(searchTerm.toLowerCase()) || (sl.store && sl.store.name.toLowerCase().includes(searchTerm.toLowerCase())))
-                    .map((sl) => (
+                  {(() => {
+                    const filteredSellers = sellers.filter(
+                      (sl) =>
+                        sl.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        (sl.store && sl.store.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                    );
+                    const totalSellerPages = Math.max(1, Math.ceil(filteredSellers.length / PAGE_SIZE));
+                    const currentSellerPage = Math.min(sellerPage, totalSellerPages);
+                    const paginatedSellers = filteredSellers.slice(
+                      (currentSellerPage - 1) * PAGE_SIZE,
+                      currentSellerPage * PAGE_SIZE
+                    );
+
+                    if (paginatedSellers.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-slate-400">
+                            {searchTerm ? "Nenhum colaborador encontrado para o filtro informado." : "Nenhum vendedor ou captador cadastrado."}
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return paginatedSellers.map((sl) => (
                       <tr key={sl.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3.5 px-4 font-bold text-slate-900">
                           {sl.name}
@@ -1142,17 +1237,60 @@ export default function CadastrosPage() {
                           </div>
                         </td>
                       </tr>
-                    ))}
-                  {sellers.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400">
-                        Nenhum vendedor ou captador cadastrado.
-                      </td>
-                    </tr>
-                  )}
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>
+
+            {/* Barra de Paginação de Vendedores (Limite de 25 linhas) */}
+            {(() => {
+              const filteredSellers = sellers.filter(
+                (sl) =>
+                  sl.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (sl.store && sl.store.name.toLowerCase().includes(searchTerm.toLowerCase()))
+              );
+              const totalSellerPages = Math.max(1, Math.ceil(filteredSellers.length / PAGE_SIZE));
+              const currentSellerPage = Math.min(sellerPage, totalSellerPages);
+              const startCount = filteredSellers.length === 0 ? 0 : (currentSellerPage - 1) * PAGE_SIZE + 1;
+              const endCount = Math.min(currentSellerPage * PAGE_SIZE, filteredSellers.length);
+
+              return (
+                <div className="px-5 py-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50 text-xs text-slate-600">
+                  <div className="font-medium">
+                    Mostrando <span className="font-bold text-slate-900">{startCount}</span> a <span className="font-bold text-slate-900">{endCount}</span> de <span className="font-bold text-slate-900">{filteredSellers.length}</span> colaboradores (25 por página)
+                  </div>
+
+                  {totalSellerPages > 1 && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={currentSellerPage <= 1}
+                        onClick={() => setSellerPage((p) => Math.max(1, p - 1))}
+                        className="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white text-slate-700 font-semibold flex items-center gap-1 transition-colors shadow-sm"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                        <span>Anterior</span>
+                      </button>
+
+                      <span className="px-3 py-1 font-bold text-slate-700 bg-white border border-slate-200 rounded-lg shadow-sm">
+                        {currentSellerPage} / {totalSellerPages}
+                      </span>
+
+                      <button
+                        type="button"
+                        disabled={currentSellerPage >= totalSellerPages}
+                        onClick={() => setSellerPage((p) => Math.min(totalSellerPages, p + 1))}
+                        className="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white text-slate-700 font-semibold flex items-center gap-1 transition-colors shadow-sm"
+                      >
+                        <span>Próximo</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
 
