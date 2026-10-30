@@ -15,10 +15,23 @@ export interface CreateCardInput {
 }
 
 export class CardService {
-  static async listCards(pipeId: string, phaseId?: string) {
+  static async listCards(
+    pipeId: string,
+    phaseId?: string,
+    userFilter?: { userId: string; role: string }
+  ) {
     await ensureDatabaseReady();
     const where: any = { pipeId };
     if (phaseId) where.currentPhaseId = phaseId;
+
+    // Se o usuário logado for operador comercial (MEMBER), exibe apenas os leads atribuídos ao seu WhatsApp/perfil.
+    // Supervisores e Administradores têm visão completa de todas as lojas e vendedores.
+    if (userFilter && userFilter.role !== "ADMIN" && userFilter.role !== "SUPERVISOR") {
+      where.OR = [
+        { createdById: userFilter.userId },
+        { assignees: { some: { userId: userFilter.userId } } },
+      ];
+    }
 
     return prisma.card.findMany({
       where,

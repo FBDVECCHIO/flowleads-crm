@@ -20,7 +20,12 @@ export async function GET(req: Request) {
       return Response.json({ error: "pipeId é obrigatório." }, { status: 400, headers: noStoreHeaders });
     }
 
-    const cards = await CardService.listCards(pipeId, phaseId);
+    const session = await requireAuth(req).catch(() => null);
+    const userFilter = session?.userId && session?.role
+      ? { userId: session.userId, role: session.role }
+      : undefined;
+
+    const cards = await CardService.listCards(pipeId, phaseId, userFilter);
     return Response.json(cards, { status: 200, headers: noStoreHeaders });
   } catch (error: any) {
     return Response.json({ error: error.message }, { status: 500, headers: noStoreHeaders });
