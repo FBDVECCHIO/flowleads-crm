@@ -10,13 +10,13 @@ export interface SessionPayload {
   issuedAt: number;
 }
 
-const EPHEMERAL_RUNTIME_SECRET = crypto.randomBytes(32).toString("hex");
+const FALLBACK_SESSION_SECRET = "0e616191dea58c85946521a8ff8e5a3b2d52801080a807529e904709623c8231";
 
 export function getSessionSecret(): string {
   if (process.env.SESSION_SECRET && process.env.SESSION_SECRET.trim().length >= 16) {
     return process.env.SESSION_SECRET.trim();
   }
-  return EPHEMERAL_RUNTIME_SECRET;
+  return FALLBACK_SESSION_SECRET;
 }
 
 /**

@@ -32,7 +32,7 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Usuário ou senha incorretos.");
 
-      router.push("/");
+      window.location.href = "/";
     } catch (err: any) {
       setError(err.message);
     } finally {
